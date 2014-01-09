@@ -93,6 +93,7 @@ def init_sage():
     import sage.doctest
     sage.doctest.DOCTEST_MODE=True
     import sage.all_cmdline
+    import sage.all_notebook
     sage.interfaces.quit.invalidate_all()
     import sage.misc.displayhook
     sys.displayhook = sage.misc.displayhook.DisplayHook(sys.displayhook)
