@@ -2044,6 +2044,10 @@ ext_modules = [
     Extension('sage.tests.cython',
               sources = ['sage/tests/cython.pyx']),
 
+    Extension('sage.tests.complex',
+              sources = ['sage/tests/complex.pyx'],
+              libraries = ['mpc', 'mpfr', 'gmp']),
+
     ################################
     ##
     ## sage.sat
