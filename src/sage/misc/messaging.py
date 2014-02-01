@@ -4,14 +4,17 @@ Message delivery.
 Various interfaces to messaging services. Currently:
 
 - ``pushover`` - a platform for sending and receiving push notifications
+- ``email`` - an interface to e-mail
 
-is supported.
+are supported.
 
 AUTHORS:
 
 - Martin Albrecht (2012) - initial implementation
 """
 pushover_defaults = {"token": "Eql67F14ohOZJ0AtEBJJU7FiLAk8wK"}
+
+from sagenb.notebook import sage_email as email
 
 def pushover(message, **kwds):
     """
