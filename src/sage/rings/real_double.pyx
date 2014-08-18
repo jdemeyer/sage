@@ -2566,7 +2566,7 @@ cdef int total_alloc = 0
 cdef int use_pool = 0
 
 
-cdef PyObject* fast_tp_new(PyTypeObject *t, PyObject *a, PyObject *k):
+cdef PyObject* fast_tp_new(PyTypeObject *t, PyObject *a, PyObject *k) except NULL:
 
     global element_pool, element_pool_count, total_alloc, use_pool
 
