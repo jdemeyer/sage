@@ -5,6 +5,7 @@ cdef extern from "Python.h":
     ctypedef void (*freefunc)(void *)
     ctypedef void (*destructor)(PyObject *)
     ctypedef long (*hashfunc)(PyObject *) except -1
+    ctypedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int) except NULL
     ctypedef PyObject *(*newfunc)(PyTypeObject *, PyObject *, PyObject *) except NULL
     ctypedef PyObject *(*allocfunc)(PyTypeObject *, Py_ssize_t) except NULL
 
