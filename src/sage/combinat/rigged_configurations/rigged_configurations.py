@@ -23,17 +23,105 @@ AUTHORS:
 
 from sage.misc.cachefunc import cached_method
 from sage.misc.lazy_attribute import lazy_attribute
+from sage.structure.global_options import GlobalOptions
 from sage.structure.unique_representation import UniqueRepresentation
 from sage.structure.parent import Parent
 from sage.combinat.misc import IterableFunctionCall
-from sage.rings.all import ZZ, QQ
+import sage.combinat.tableau as tableau
+from sage.rings.all import QQ
 from sage.categories.finite_crystals import FiniteCrystals
 from sage.categories.regular_crystals import RegularCrystals
 from sage.combinat.root_system.cartan_type import CartanType
 from sage.combinat.cartesian_product import CartesianProduct
 from sage.combinat.rigged_configurations.kleber_tree import KleberTree, VirtualKleberTree
-from sage.combinat.rigged_configurations.rigged_configuration_element import RiggedConfigurationElement, \
-  RCNonSimplyLacedElement
+from sage.combinat.rigged_configurations.rigged_configuration_element import (
+     RiggedConfigurationElement, KRRCSimplyLacedElement, KRRCNonSimplyLacedElement,
+     KRRCTypeA2DualElement)
+
+RiggedConfigurationOptions=GlobalOptions(name='rigged configurations',
+    doc=r"""
+    Sets and displays the global options for rigged configurations.
+    If no parameters are set, then the function returns a copy of
+    the options dictionary.
+
+    The ``options`` to partitions can be accessed as the method
+    :obj:`RiggedConfigurations.global_options` of
+    :class:`RiggedConfigurations`.
+    """,
+    end_doc=r"""
+    EXAMPLES::
+
+        sage: RC = RiggedConfigurations(['A',3,1], [[2,2],[1,1],[1,1]])
+        sage: elt = RC(partition_list=[[3,1], [3], [1]])
+        sage: elt
+        <BLANKLINE>
+        -3[ ][ ][ ]-3
+        -1[ ]-1
+        <BLANKLINE>
+        1[ ][ ][ ]1
+        <BLANKLINE>
+        -1[ ]-1
+        <BLANKLINE>
+        sage: RiggedConfigurations.global_options(display="horizontal", convention="french")
+        sage: elt
+        -1[ ]-1         1[ ][ ][ ]1   -1[ ]-1
+        -3[ ][ ][ ]-3
+
+    Changing the ``convention`` for rigged configurations also changes the
+    ``convention`` option for tableaux and vice versa::
+
+        sage: T = Tableau([[1,2,3],[4,5]])
+        sage: T.pp()
+          4  5
+          1  2  3
+        sage: Tableaux.global_options(convention="english")
+        sage: elt
+        -3[ ][ ][ ]-3   1[ ][ ][ ]1   -1[ ]-1
+        -1[ ]-1
+        sage: T.pp()
+          1  2  3
+          4  5
+        sage: RiggedConfigurations.global_options.reset()
+    """,
+    display=dict(default="vertical",
+                 description='Specifies how rigged configurations should be printed',
+                 values=dict(vertical='displayed vertically',
+                             horizontal='displayed horizontally'),
+                 case_sensitive=False),
+    element_ascii_art=dict(default=True,
+                     description='display using the repr option ``element_ascii_art``',
+                     checker=lambda x: isinstance(x, bool)),
+    convention=dict(link_to=(tableau.TableauOptions,'convention')),
+    notation = dict(alt_name='convention')
+)
+
+# Used in the KR crystals catalog so that there is a common interface
+def KirillovReshetikhinCrystal(cartan_type, r, s):
+    """
+    Return the KR crystal `B^{r,s}` using
+    :class:`rigged configurations <RiggedConfigurations>`.
+
+    This is the rigged configuration `RC(B^{r,s})` or `RC(L)` with
+    `L = (L_i^{(a)})` and `L_i^{(a)} = \delta_{a,r} \delta_{i,s}`.
+
+    EXAMPLES::
+
+        sage: K1 = crystals.kirillov_reshetikhin.RiggedConfigurations(['A',6,2], 2, 1)
+        sage: K2 = crystals.kirillov_reshetikhin.LSPaths(['A',6,2], 2, 1)
+        sage: K1.digraph().is_isomorphic(K2.digraph(), edge_labels=True)
+        True
+
+    TESTS:
+
+    We explicitly import and check we get the same crystal::
+
+        sage: from sage.combinat.rigged_configurations.rigged_configurations import KirillovReshetikhinCrystal
+        sage: K1 = crystals.kirillov_reshetikhin.RiggedConfigurations(['A',6,2], 2, 1)
+        sage: K1 is KirillovReshetikhinCrystal(['A',6,2], 2, 1)
+        True
+    """
+    from sage.combinat.rigged_configurations.rigged_configurations import RiggedConfigurations
+    return RiggedConfigurations(cartan_type, [[r,s]])
 
 # Note on implementation, this class is used for simply-laced types only
 class RiggedConfigurations(Parent, UniqueRepresentation):
@@ -86,18 +174,20 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
     highest weight ones using the crystal operators.
 
     Rigged configurations are conjecturally in bijection with
-    :class:`TensorProductOfKirillovReshetikhinTableaux` of non-exceptional
-    affine types where the list `B` corresponds to the tensor factors
-    `B^{r,s}`. The bijection has been proven in types `A_n^{(1)}` and
-    `D_n^{(1)}` and when the only non-zero entries of `L_i^{(a)}` are either
+    :class:`~sage.combinat.rigged_configurations.tensor_product_kr_tableaux.TensorProductOfKirillovReshetikhinTableaux`
+    of non-exceptional affine types where the list `B` corresponds to the
+    tensor factors `B^{r,s}`. The bijection has been proven in types `A_n^{(1)}`
+    and `D_n^{(1)}` and when the only non-zero entries of `L_i^{(a)}` are either
     only `L_1^{(a)}` or only `L_i^{(1)}` (corresponding to single columns or
     rows respectively) [RigConBijection]_, [BijectionLRT]_, [BijectionDn]_.
 
     KR crystals are implemented in Sage, see
-    :class:`KirillovReshetikhinCrystal`, however, in the bijection with
-    rigged configurations a different realization of the elements in the
-    crystal are obtained, which are coined KR tableaux, see
-    :class:`KirillovReshetikhinTableaux`. For more details see [OSS2011]_.
+    :func:`~sage.combinat.crystals.kirillov_reshetikhin.KirillovReshetikhinCrystal`,
+    however, in the bijection with rigged configurations a different
+    realization of the elements in the crystal are obtained, which are
+    coined KR tableaux, see
+    :class:`~sage.combinat.rigged_configurations.kr_tableaux.KirillovReshetikhinTableaux`.
+    For more details see [OSS2011]_.
 
     .. NOTE::
 
@@ -154,44 +244,16 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
         6
         sage: len(RC.list()) == RC.cardinality()
         True
-        sage: RC.list()    # random
+        sage: RC.list()
         [
-        (/)
         <BLANKLINE>
-        (/)
+                                                 0[ ]0
+        (/)  (/)      (/)      -1[ ]-1  -1[ ]-1
+                                                 -1[ ]-1
+        (/)  -1[ ]-1  0[ ]0    0[ ]0    1[ ]1    -1[ ]-1
         <BLANKLINE>
-        (/)
-        ,
-        (/)
-        <BLANKLINE>
-        -1[ ]-1
-        <BLANKLINE>
-        (/)
-        ,
-        (/)
-        <BLANKLINE>
-        0[ ]0
-        <BLANKLINE>
-        -1[ ]-1
-        ,
-        -1[ ]-1
-        <BLANKLINE>
-        0[ ]0
-        <BLANKLINE>
-        (/)
-        ,
-        -1[ ]-1
-        <BLANKLINE>
-        1[ ]1
-        <BLANKLINE>
-        -1[ ]-1
-        ,
-        0[ ]0
-        <BLANKLINE>
-        -1[ ]-1
-        -1[ ]-1
-        <BLANKLINE>
-        0[ ]0
+        (/)  (/)      -1[ ]-1  (/)      -1[ ]-1  0[ ]0
+           ,        ,        ,        ,        ,
         ]
 
     A rigged configuration element with all riggings equal to the vacancy
@@ -294,9 +356,9 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
     ::
 
         sage: RC = RiggedConfigurations(['D', 4, 1], [[4,1], [3,3]])
-        sage: KR1 = KirillovReshetikhinCrystal(['D', 4, 1], 4, 1)
-        sage: KR2 = KirillovReshetikhinCrystal(['D', 4, 1], 3, 3)
-        sage: T = TensorProductOfCrystals(KR1, KR2)
+        sage: KR1 = crystals.KirillovReshetikhin(['D', 4, 1], 4, 1)
+        sage: KR2 = crystals.KirillovReshetikhin(['D', 4, 1], 3, 3)
+        sage: T = crystals.TensorProduct(KR1, KR2)
         sage: t = T[1]; t
         [[++++, []], [+++-, [[1], [2], [4], [-4]]]]
         sage: ret = RC(t)
@@ -312,11 +374,10 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
         sage: RC.cardinality()
         8
 
-
         sage: RC = RiggedConfigurations(['D', 4, 1], [[2, 1]])
         sage: c = RC.cardinality(); c
         29
-        sage: K = KirillovReshetikhinCrystal(['D',4,1],2,1)
+        sage: K = crystals.KirillovReshetikhin(['D',4,1],2,1)
         sage: K.cardinality() == c
         True
     """
@@ -372,8 +433,10 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
         """
         self._cartan_type = cartan_type
         self.dims = B
-        # We store the cartan matrix for the vacancy number calculations for speed
-        self._cartan_matrix = self._cartan_type.classical().cartan_matrix()
+        cl = cartan_type.classical()
+        self._rc_index = cl.index_set()
+        # We store the Cartan matrix for the vacancy number calculations for speed
+        self._cartan_matrix = cl.cartan_matrix()
         Parent.__init__(self, category=(RegularCrystals(), FiniteCrystals()))
 
     def _repr_(self):
@@ -386,6 +449,24 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
             Rigged configurations of type ['A', 3, 1] and factor(s) ((3, 2), (1, 2), (1, 1))
         """
         return "Rigged configurations of type {} and factor(s) {}".format(self._cartan_type, self.dims)
+
+    def _repr_option(self, key):
+        """
+        Metadata about the :meth:`_repr_` output.
+
+        See :meth:`sage.structure.parent._repr_option` for details.
+
+        EXAMPLES::
+
+            sage: RC = RiggedConfigurations(['A', 3, 1], [[2,1]])
+            sage: RC._repr_option('element_ascii_art')
+            True
+        """
+        if key == 'element_ascii_art':
+            return self.global_options('element_ascii_art')
+        return super(RiggedConfigurations, self)._repr_option(key)
+
+    global_options = RiggedConfigurationOptions
 
     def __iter__(self):
         """
@@ -607,7 +688,7 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
 
         TESTS::
 
-            sage: KT = TensorProductOfKirillovReshetikhinTableaux(['C',2,1], [[2,4],[1,2]])
+            sage: KT = crystals.TensorProductOfKirillovReshetikhinTableaux(['C',2,1], [[2,4],[1,2]])
             sage: t = KT(pathlist=[[2,1,2,1,-2,2,-1,-2],[2,-2]])
             sage: rc = t.to_rigged_configuration(); rc
             <BLANKLINE>
@@ -672,7 +753,10 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
             sage: RC._calc_vacancy_number(elt.nu(), 1, 0)
             0
         """
-        row_len = partitions[a][i]
+        if i is None:
+            row_len = float("inf")
+        else:
+            row_len = partitions[a][i]
 
         vac_num = 0
         if "B" in options:
@@ -682,7 +766,7 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
                     vac_num += min(row_len, len(tableau[0]))
         elif "L" in options:
             L = options["L"]
-            if L.has_key(a):
+            if a in L:
                 for kvp in L[a].items():
                     vac_num += min(kvp[0], row_len) * kvp[1]
         elif "dims" in options:
@@ -924,11 +1008,11 @@ class RiggedConfigurations(Parent, UniqueRepresentation):
             if z != x:
                 rejects.append((x, z))
 
-        tester.assertTrue(len(rejects) == 0, "Bijection is not correct: %s"%rejects)
+        tester.assertTrue(len(rejects) == 0, "Bijection is not correct: {}".format(rejects))
         if len(rejects) != 0:
             return rejects
 
-RiggedConfigurations.Element = RiggedConfigurationElement
+    Element = KRRCSimplyLacedElement
 
 class RCNonSimplyLaced(RiggedConfigurations):
     r"""
@@ -998,7 +1082,10 @@ class RCNonSimplyLaced(RiggedConfigurations):
             sage: RC._calc_vacancy_number(elt.nu(), 1, 0)
             0
         """
-        row_len = partitions[a][i]
+        if i is None:
+            row_len = float("inf")
+        else:
+            row_len = partitions[a][i]
 
         vac_num = 0
         if "B" in options:
@@ -1008,7 +1095,7 @@ class RCNonSimplyLaced(RiggedConfigurations):
                     vac_num += min(row_len, len(tableau[0]))
         elif "L" in options:
             L = options["L"]
-            if L.has_key(a):
+            if a in L:
                 for kvp in L[a].items():
                     vac_num += min(kvp[0], row_len) * kvp[1]
         elif "dims" in options:
@@ -1258,10 +1345,10 @@ class RCNonSimplyLaced(RiggedConfigurations):
             for i, p in enumerate(elt):
                 for j, vac_num in enumerate(p.vacancy_numbers):
                     tester.assertTrue(vac_num == x[i].vacancy_numbers[j],
-                      "Incorrect vacancy number: %s\nComputed: %s\nFor: %s"\
-                      %(x[i].vacancy_numbers[j],vac_num, x))
+                      "Incorrect vacancy number: {}\nComputed: {}\nFor: {}".format(
+                       x[i].vacancy_numbers[j],vac_num, x))
 
-RCNonSimplyLaced.Element = RCNonSimplyLacedElement
+    Element = KRRCNonSimplyLacedElement
 
 class RCTypeA2Even(RCNonSimplyLaced):
     """
@@ -1340,7 +1427,10 @@ class RCTypeA2Even(RCNonSimplyLaced):
             sage: RC._calc_vacancy_number(elt.nu(), 1, 0)
             0
         """
-        row_len = partitions[a][i]
+        if i is None:
+            row_len = float("inf")
+        else:
+            row_len = partitions[a][i]
 
         vac_num = 0
         if "B" in options:
@@ -1350,7 +1440,7 @@ class RCTypeA2Even(RCNonSimplyLaced):
                     vac_num += min(row_len, len(tableau[0]))
         elif "L" in options:
             L = options["L"]
-            if L.has_key(a):
+            if a in L:
                 for kvp in L[a].items():
                     vac_num += min(kvp[0], row_len) * kvp[1]
         elif "dims" in options:
@@ -1495,7 +1585,10 @@ class RCTypeA2Dual(RCTypeA2Even):
         """
         if a != self._cartan_type.classical().rank()-1:
             return RCTypeA2Even._calc_vacancy_number(self, partitions, a, i, **options)
-        row_len = partitions[a][i]
+        if i is None:
+            row_len = float("inf")
+        else:
+            row_len = partitions[a][i]
 
         vac_num = 0
         if "B" in options:
@@ -1505,7 +1598,7 @@ class RCTypeA2Dual(RCTypeA2Even):
                     vac_num += min(row_len, len(tableau[0]))
         elif "L" in options:
             L = options["L"]
-            if L.has_key(a):
+            if a in L:
                 for kvp in L[a].items():
                     vac_num += min(kvp[0], row_len) * kvp[1]
         elif "dims" in options:
@@ -1779,6 +1872,8 @@ class RCTypeA2Dual(RCTypeA2Even):
         return self.element_class(self, partition_list=partitions,
                                   rigging_list=riggings, vacancy_numbers_list=vac_nums)
 
+    Element = KRRCTypeA2DualElement
+
 def HighestWeightRiggedConfigurations(cartan_type, B):
     """
     Deprecated in :trac:`13872`. Use instead the attribute
@@ -1791,10 +1886,12 @@ def HighestWeightRiggedConfigurations(cartan_type, B):
          Use RiggedConfigurations(cartan_type, B).module_generators instead
         See http://trac.sagemath.org/13872 for details.
         (
+        <BLANKLINE>
         (/)
         <BLANKLINE>
         (/)
-        ,)
+        <BLANKLINE>
+        )
     """
     from sage.misc.superseded import deprecation
     deprecation(13872, 'this class is deprecated. Use RiggedConfigurations('

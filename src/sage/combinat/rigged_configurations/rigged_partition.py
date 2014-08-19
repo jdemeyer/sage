@@ -55,7 +55,7 @@ class RiggedPartition(CombinatorialObject):
         sage: RC = RiggedConfigurations(['A', 4, 1], [[2, 2]])
         sage: RP = RC(partition_list=[[2],[2,2],[2,1],[2]])[2]
         sage: RP
-        0[ ][ ]0
+         0[ ][ ]0
         -1[ ]-1
         <BLANKLINE>
         sage: type(RP)
@@ -268,7 +268,8 @@ class RiggedPartition(CombinatorialObject):
             i -= 1
 
         # Add the remaining cells
-        sum_cells += end_column * (i + 1)
+        if i > -1:
+            sum_cells += end_column * (i + 1)
 
         return sum_cells
 
