@@ -5702,9 +5702,14 @@ cdef class Polynomial(CommutativeAlgebraElement):
             3-adic Ring with capped relative precision 5
         """
         K = self.parent().base_ring()
+        # If the base ring has a method _roots_univariate_polynomial,
+        # try to use it. An exception is raised if the method does not
+        # handle the current parameters
         if hasattr(K, '_roots_univariate_polynomial'):
-            ret = K._roots_univariate_polynomial(self, ring=ring, multiplicities=multiplicities, algorithm=algorithm)
-            if ret is not None: return ret
+            try:
+                return K._roots_univariate_polynomial(self, ring=ring, multiplicities=multiplicities, algorithm=algorithm)
+            except NotImplementedError:
+                pass
 
         L = K if ring is None else ring
 
