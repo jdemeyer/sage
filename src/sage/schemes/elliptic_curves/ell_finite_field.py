@@ -389,7 +389,7 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             sage: E.trace_of_frobenius()
             802
 
-        The following shows that the issue from trac #2849 is fixed::
+        The following shows that the issue from :trac:`2849` is fixed::
 
             sage: E=EllipticCurve(GF(3^5,'a'),[-1,-1])
             sage: E.trace_of_frobenius()
@@ -480,11 +480,6 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             784
 
         """
-        try:
-            return self._order
-        except AttributeError:
-            pass
-
         k = self.base_ring()
         assert self.j_invariant()==k(1728)
         q = k.cardinality()
@@ -645,7 +640,11 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
 
     def _cardinality_with_j_invariant_0(self):
         r"""
-        Special function to compute cardinality when j=0.
+        Special function to compute cardinality when j=0 in
+        characteristic `p >= 5`.
+        
+        In characteristic 2 or 3, use
+        :meth:`_cardinality_with_j_invariant_1728` instead.
 
         EXAMPLES: An example with q=p=1 (mod 6)
 
@@ -670,21 +669,10 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             sage: F.<a>=GF(1013^2,'a')
             sage: [EllipticCurve(F,[0,0,0,0,a^i])._cardinality_with_j_invariant_0() for i in range(6)]
             [1028196, 1027183, 1025157, 1024144, 1025157, 1027183]
-
-        For examples in characteristic 2 and 3, see the function
-        _cardinality_with_j_invariant_1728()
         """
-
-        try:
-            return self._order
-        except AttributeError:
-            pass
-
         k = self.base_ring()
-        assert self.j_invariant()==k(0)
         p = k.characteristic()
-        if p==2 or p==3:  # then 0==1728
-            return self._cardinality_with_j_invariant_1728()
+        assert self.j_invariant()==k(0) and p >= 5
 
         q = k.cardinality()
         d = k.degree()
@@ -741,22 +729,24 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         self._order = Integer(N)
         return self._order
 
-    def cardinality(self, algorithm='pari', extension_degree=1):
+    def cardinality(self, algorithm=None, extension_degree=1):
         r"""
         Return the number of points on this elliptic curve.
 
         INPUT:
 
-        - ``algorithm`` -- string (default: ``'pari'``), used only for
-          point counting over prime fields:
+        - ``algorithm`` -- string (default: determine automatically):
+
+          - ``'exhaustive'`` -- loop over all possible `x`-coordinates
+            and count the points `(x,y)`.
 
           - ``'pari'`` -- use the baby-step giant-step or
             Schoof-Elkies-Atkin methods as implemented in the PARI
-            C-library function ``ellap``
+            C-library function ``ellap``.
 
           - ``'bsgs'`` -- use the baby-step giant-step method as
             implemented in Sage, with the Cremona-Sutherland version
-            of Mestre's trick
+            of Mestre's trick.
 
           - ``'all'`` -- compute cardinality with both ``'pari'`` and
             ``'bsgs'``; return result if they agree or raise a
@@ -826,7 +816,7 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             sage: EllipticCurve(GF(10009), [1,2,3,4,5]).cardinality(algorithm='foobar')
             Traceback (most recent call last):
             ...
-            ValueError: Algorithm is not known
+            ValueError: Algorithm 'foobar' is not known
 
         If the cardinality has already been computed, then the ``algorithm``
         keyword is ignored::
@@ -837,17 +827,17 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             sage: E.cardinality(algorithm='foobar')
             10076
         """
-        if extension_degree>1:
+        if extension_degree > 1:
             # A recursive call to cardinality() with
             # extension_degree=1, which will cache the cardinality, is
             # made by the call to frobenius_order() here:
-            R=self.frobenius_order()
-            if R.degree()==1:
+            R = self.frobenius_order()
+            if R.degree() == 1:
                 return (self.frobenius()**extension_degree-1)**2
             else:
                 return (self.frobenius()**extension_degree-1).norm()
 
-        # Now extension_degree==1
+        # Now extension_degree == 1
         try:
             return self._order
         except AttributeError:
@@ -856,75 +846,80 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
         k = self.base_ring()
         q = k.cardinality()
 
-        if q < 50:
-            return self.cardinality_exhaustive()
-
-        # use special code for j=0, 1728 (for any field)
-        j = self.j_invariant()
-        if j==k(0):
-            return self._cardinality_with_j_invariant_0()
-        if j==k(1728):
-            return self._cardinality_with_j_invariant_1728()
-
-        N = 0
-        p = k.characteristic()
-        d = k.degree()
-
-        # Over prime fields, we have a variety of algorithms to choose from:
-
-        if d == 1:
-            if algorithm in ('heuristic', 'sea'):  # for backwards compatibility
+        # Determine the default algorithm
+        if algorithm is None:
+            from sage.rings.finite_rings.finite_field_prime_modn import FiniteField_prime_modn
+            from sage.rings.finite_rings.finite_field_pari_ffelt import FiniteField_pari_ffelt
+            if isinstance(k, FiniteField_prime_modn) or isinstance(k, FiniteField_pari_ffelt):
+                # Currently, the PARI algorithm only works for these
+                # finite field implementations.
                 algorithm = 'pari'
-            if algorithm == 'pari':
-                N = self.cardinality_pari()
-            elif algorithm == 'bsgs':
-                N = self.cardinality_bsgs()
-            elif algorithm == 'all':
-                N1 = self.cardinality_pari()
-                N2 = self.cardinality_bsgs()
-                if N1 == N2:
-                    N = N1
-                else:
-                    raise RuntimeError("BUG! Cardinality with pari=%s but with bsgs=%s"%(N1, N2))
+            elif q < 50:
+                algorithm = 'exhaustive'
+                print "Using exhaustive algorithm"
             else:
-                raise ValueError("Algorithm is not known")
-            self._order = Integer(N)
-            return self._order
+                algorithm = 'bsgs'
+                print "Using bsgs algorithm"
+        elif algorithm in ('heuristic', 'sea'):  # for backwards compatibility
+            algorithm = 'pari'
 
-        # now k is not a prime field and j is not 0, 1728
+        # Special short-cuts if we are not using PARI (this is mostly
+        # old code, these tricks are not needed when using PARI).
+        if True: #algorithm != 'pari':
+            # Use special code for j=0, 1728 (for any field)
+            j = self.j_invariant()
+            if j == k(1728):
+                return self._cardinality_with_j_invariant_1728()
+            if j == k(0):
+                return self._cardinality_with_j_invariant_0()
 
-        # we count points on a standard curve with the same
-        # j-invariant, defined over the field it generates, then lift
-        # to the curve's own field, and finally allow for twists
+            if k.degree() > 1:
+                # Now k is not a prime field and j is not 0, 1728. We count
+                # points on a standard curve with the same j-invariant,
+                # defined over the field it generates, then lift to the
+                # curve's own field, and finally allow for twists.
+                # Since j is not 0, 1728 the only twists are quadratic.
+                j_pol = j.minimal_polynomial()
+                j_deg = j_pol.degree()
 
-        # Since j is not 0, 1728 the only twists are quadratic
+                # Yes, we can work over a smaller field!
+                if j_deg < k.degree():
+                    # Let jkj be the j-invariant as element of the smallest finite
+                    # field over which j is defined.
+                    if j_deg == 1:
+                        # j_pol is of the form X - j
+                        jkj = -j_pol[0]
+                    else:
+                        qj = k.characteristic()**j_deg
+                        jkj = GF(qj, name='a', modulus=j_pol, impl='pari_ffelt').gen()
 
-        j_pol=j.minimal_polynomial()
-        j_deg=j_pol.degree()
+                    # recursive call which will do all the real work:
+                    Ej = EllipticCurve_from_j(jkj)
+                    N = Ej.cardinality(extension_degree=k.degree()//j_deg)
 
-        # if not possible to work over a smaller field:
-        if d==j_deg:
-            self._order = self.cardinality_bsgs()
-            return self._order
+                    # if curve is a (quadratic) twist of the "standard" one:
+                    if not self.is_isomorphic(EllipticCurve_from_j(j)):
+                        N = 2*(q+1) - N
 
-        # Let jkj be the j-invariant as element of the smallest finite
-        # field over which j is defined.
-        if j_deg == 1:
-            # j_pol is of the form X - j
-            jkj = -j_pol[0]
+                    self._order = N
+                    return self._order
+
+        if algorithm == 'pari':
+            N = self.cardinality_pari()
+        elif algorithm == 'bsgs':
+            N = self.cardinality_bsgs()
+        elif algorithm == 'exhaustive':
+            N = self.cardinality_exhaustive()
+        elif algorithm == 'all':
+            N = self.cardinality_pari()
+            N2 = self.cardinality_bsgs()
+            if N != N2:
+                raise RuntimeError("BUG! Cardinality with pari=%s but with bsgs=%s"%(N1, N2))
         else:
-            jkj = GF(p**j_deg, name='a', modulus=j_pol).gen()
-
-        # recursive call which will do all the real work:
-        Ej = EllipticCurve_from_j(jkj)
-        N=Ej.cardinality(extension_degree=d//j_deg)
-
-        # if curve ia a (quadratic) twist of the "standard" one:
-        if not self.is_isomorphic(EllipticCurve_from_j(j)):
-            N = 2*(q+1) - N
-
-        self._order = N
+            raise ValueError("Algorithm %r is not known"%algorithm)
+        self._order = Integer(N)
         return self._order
+
 
     order = cardinality # alias
 
@@ -1040,9 +1035,9 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
 
     def cardinality_pari(self):
         r"""
-        Return the cardinality of self over the (prime) base field using PARI.
-
-        The result is not cached.
+        Return the cardinality of self using PARI. This requires that
+        the elliptic curve is defined either over the prime field or
+        over a finite field with ``pari_ffelt`` implementation.
 
         EXAMPLES::
 
@@ -1055,30 +1050,26 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             sage: E.cardinality_pari()
             999945
 
-        TESTS::
+        Over extension fields, we need to construct the finite field
+        with ``impl="pari_ffelt"`` (over large finite fields, this is
+        the default)::
 
-            sage: K.<a>=GF(3^20)
-            sage: E=EllipticCurve(K,[1,0,0,1,a])
+            sage: K.<a> = GF(3^5, impl="pari_ffelt")
+            sage: E = EllipticCurve_from_j(a)
             sage: E.cardinality_pari()
-            Traceback (most recent call last):
-            ...
-            ValueError: cardinality_pari() only works over prime fields.
-            sage: E.cardinality()
             3486794310
-
+            sage: K.<a> = GF(3^20)
+            sage: E = EllipticCurve(K,[1,0,0,1,a])
+            sage: E.cardinality_pari()
+            3486794310
         """
-        k = self.base_ring()
-        p = k.characteristic()
-        if k.degree()==1:
-            return ZZ(p + 1 - int(self._pari_().ellap(p)))
-        else:
-            raise ValueError("cardinality_pari() only works over prime fields.")
+        q = self.base_ring().cardinality()
+        return ZZ(q + 1 - self._pari_().ellap())
 
     def cardinality_bsgs(self, verbose=False):
         r"""
         Return the cardinality of self over the base field. Will be called
-        by user function cardinality only when necessary, i.e. when the
-        j_invariant is not in the prime field.
+        by user function :meth:`cardinality` only when explicitly asked.
 
         ALGORITHM: A variant of "Mestre's trick" extended to all finite
         fields by Cremona and Sutherland, 2008.
@@ -1392,53 +1383,17 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             except AttributeError:
                 pass
 
-        k = self.base_field()
-        q = k.order()
-        p = k.characteristic()
-        d = k.degree()
-        j = self.j_invariant()
-        if d>1:
-            d = j.minimal_polynomial().degree()
-
-
         # Before computing the group structure we compute the
         # cardinality.  While this is not strictly necessary, it makes
         # the code simpler and also makes computation of orders of
         # points faster.
+        N = self.cardinality()
 
-        # j=0,1728
-
-        if j==k(0):
-            N = self._cardinality_with_j_invariant_0()
-        if j==k(1728):
-            N = self._cardinality_with_j_invariant_1728()
-
-        bounds = Hasse_bounds(q)
-        lower, upper = bounds
+        q = self.base_field().order()
+        lower, upper = Hasse_bounds(q)
         if debug:
             print "Lower and upper bounds on group order: [",lower,",",upper,"]"
 
-        try:
-            N=self._order
-            if debug:
-                print "Group order already known to be ",N
-        except Exception:
-            if (q<50):
-                if debug:
-                    print "Computing group order naively"
-                N=self.cardinality_exhaustive()
-            elif d==1:
-                if debug:
-                    print "Computing group order using PARI"
-                N=self.cardinality()
-            else:
-                if debug:
-                    print "Computing group order using bsgs"
-                N=self.cardinality_bsgs()
-            if debug:
-                print "... group order = ",N
-
-        self._order=N
         plist = N.prime_factors()
         P1=self(0)
         P2=self(0)

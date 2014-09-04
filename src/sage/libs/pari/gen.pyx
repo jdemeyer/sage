@@ -5735,30 +5735,18 @@ cdef class gen(sage.structure.element.RingElement):
         pari_catch_sig_on()
         return P.new_gen(ellanalyticrank(self.g, <GEN>0, prec_bits_to_words(precision)))
 
-    def ellap(self, p):
+    def ellap(gen self, p=None):
         r"""
-        e.ellap(p): Returns the prime-indexed coefficient `a_p` of the
-        `L`-function of the elliptic curve `e`, i.e. the `p`-th Fourier
-        coefficient of the newform attached to e.
-
-        The computation uses the Shanks--Mestre method, or the SEA
-        algorithm.
-
-        .. WARNING::
-
-            For this function to work for every n and not just those prime
-            to the conductor, e must be a minimal Weierstrass equation.
-            If this is not the case, use the function ellminimalmodel first
-            before using ellap (or you will get INCORRECT RESULTS!)
-
+        Return the trace of Frobenius `a_p` for the elliptic curve
+        ``self``, defined over Q or a finite field.
 
         INPUT:
 
+        - ``self`` -- a PARI elliptic curve defined over Q or a finite
+          field.
 
-        -  ``e`` - a PARI elliptic curve.
-
-        -  ``p`` - prime integer
-
+        - ``p`` -- (optional) if the curve is defined over Q, the `p`
+          for which `a_p` should be computed.
 
         EXAMPLES::
 
@@ -5770,10 +5758,14 @@ cdef class gen(sage.structure.element.RingElement):
             sage: e.ellak(-1)
             0
         """
-        cdef gen t0 = objtogen(p)
-        pari_catch_sig_on()
-        return P.new_gen(ellap(self.g, t0.g))
-
+        cdef gen t0
+        if p is None:
+            pari_catch_sig_on()
+            return P.new_gen(ellap(self.g, NULL))
+        else:
+            t0 = objtogen(p)
+            pari_catch_sig_on()
+            return P.new_gen(ellap(self.g, t0.g))
 
     def ellaplist(self, long n, python_ints=False):
         r"""
