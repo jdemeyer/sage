@@ -296,6 +296,19 @@ class FiniteFieldFactory(UniqueFactory):
         ValueError: the degree of the modulus does not equal the
         degree of the field.
 
+    Any type which can be converted to the polynomial ring `GF(p)[x]`
+    is accepted as modulus::
+
+        sage: K.<a> = GF(13^3, modulus=[1,0,0,2])
+        sage: K.<a> = GF(13^10, modulus=pari("ffinit(13,10)"))
+        sage: var('x')
+        x
+        sage: K.<a> = GF(13^2, modulus=x^2 - 2)
+        sage: K.<a> = GF(13^2, modulus=sin(x))
+        Traceback (most recent call last):
+        ...
+        TypeError: unable to convert x (=sin(x)) to an integer
+
     If you wish to live dangerously, you can tell the constructor not
     to test irreducibility using ``check_irreducible=False``, but this
     can easily lead to crashes and hangs -- so do not do it unless you
@@ -303,7 +316,6 @@ class FiniteFieldFactory(UniqueFactory):
 
     ::
 
-        sage: F.<x> = GF(5)[]
         sage: K.<a> = GF(5**2, name='a', modulus=x^2 + 2, check_irreducible=False)
 
     It is always checked that the modulus has the correct degree::
@@ -496,12 +508,11 @@ class FiniteFieldFactory(UniqueFactory):
                     if modulus == "default":    # for backward compatibility
                         modulus = None
                     modulus = R.irreducible_element(n, algorithm=modulus)
-                elif isinstance(modulus, (list, tuple)):
-                    modulus = R(modulus)
+                    check_irreducible = False
                 elif sage.rings.polynomial.polynomial_element.is_Polynomial(modulus):
                     modulus = R(modulus.change_variable_name('x'))
                 else:
-                    raise TypeError("wrong type for modulus parameter")
+                    modulus = R(modulus)
 
                 if impl is None:
                     if order < zech_log_bound:
