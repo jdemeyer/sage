@@ -4432,38 +4432,38 @@ cdef class Polynomial(CommutativeAlgebraElement):
         """
         raise NotImplementedError
 
-    def sparsity(self):
+    def number_of_terms(self):
         """
-        Return the number of nonzero monomials of self.
+        Return the number of nonzero terms of self.
 
         EXAMPLES::
 
             sage: R.<x> = ZZ[]
-            sage: (x+x^4+x^7).sparsity()
+            sage: (x+x^4+x^7).number_of_terms()
             3
-            sage: R(0).sparsity()
+            sage: R(0).number_of_terms()
             0
-            sage: R(1).sparsity()
+            sage: R(1).number_of_terms()
             1
 
             sage: R.<x> = IntegerModRing(10)[]
-            sage: (1+x+10*x^2+12*x^3).sparsity()
+            sage: (1+x+10*x^2+12*x^3).number_of_terms()
             3
 
             sage: S = QuotientRing(R,Ideal(x^2-1))
             sage: T.<t> = S[]
-            sage: ((9*x + 8)*t^4 + (5*x + 9)*t + x^2 + 4).sparsity()
+            sage: ((9*x + 8)*t^4 + (5*x + 9)*t + x^2 + 4).number_of_terms()
             3
-            sage: ((x^2+9)*t).sparsity()
+            sage: ((x^2+9)*t).number_of_terms()
             0
 
         TESTS::
 
             sage: for K in [QQ,QQbar,GF(17),GF(3**5,'a'),Zmod(10)]:
             ....:     R.<x> = PolynomialRing(K,'x',sparse=False)
-            ....:     assert (x**18 - x**5 + 1).sparsity() == 3
+            ....:     assert (x**18 - x**5 + 1).number_of_terms() == 3
             ....:     R.<x> = PolynomialRing(K,'x',sparse=True)
-            ....:     assert (x**18 + x**10 - x**5 + 1).sparsity() == 4
+            ....:     assert (x**18 + x**10 - x**5 + 1).number_of_terms() == 4
         """
         zero = self.parent().base_ring().zero_element()
         return sum(c != zero for c in self.list())

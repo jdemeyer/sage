@@ -125,15 +125,15 @@ class Polynomial_generic_sparse(Polynomial):
         """
         return dict(self.__coeffs)
 
-    def sparsity(self):
+    def number_of_terms(self):
         """
-        Return the number of nonzero monomials in self.
+        Return the number of nonzero terms of self.
 
         EXAMPLES::
 
             sage: R.<x> = PolynomialRing(ZZ,sparse=True)
             sage: f = x+x^43+x^72
-            sage: f.sparsity()
+            sage: f.number_of_terms()
             3
         """
         return len(self.__coeffs)
