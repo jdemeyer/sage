@@ -1277,6 +1277,15 @@ cdef class IntegerRing_class(PrincipalIdealDomain):
             sage: ZZ._roots_univariate_polynomial(p,multiplicities=False)
             [100, -5445, 1, -1]
 
+            sage: ZZ._roots_univariate_polynomial(p,algorithm="sparse")
+            [(100, 1), (-5445, 5), (1, 23), (-1, 23)]
+            sage: ZZ._roots_univariate_polynomial(p,algorithm="dense")
+            [(100, 1), (-5445, 5), (1, 23), (-1, 23)]
+            sage: try:
+            ....:     ZZ._roots_univariate_polynomial(p,algorithm="foobar")
+            ....: except ValueError as e:
+            ....:     print e
+            Unknown algorithm 'foobar'
 
         """
 
