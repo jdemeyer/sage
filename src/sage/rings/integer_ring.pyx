@@ -1287,14 +1287,9 @@ cdef class IntegerRing_class(PrincipalIdealDomain):
         if ring is not self and ring is not None:
             raise NotImplementedError
 
-        # Automatic choice for sparse/dense to be defined
-        # Now: dense for densely represented polynomial, and sparse otherwise
+        # Automatic choice for sparse vs dense algorithm:
         if algorithm is None:
-            if p.parent().is_sparse():
-            #or p.degree() - p.sparsity() -p.valuation() > 10:
-                algorithm = "sparse"
-            else:
-                algorithm = "dense"
+            algorithm = "sparse"
 
         if algorithm != "dense" and algorithm != "sparse":
             raise ValueError("Unknown algorithm '%s'" % algorithm)
