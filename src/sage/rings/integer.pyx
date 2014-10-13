@@ -250,6 +250,9 @@ cdef set_from_pari_gen(Integer self, pari_gen x):
     # Now we have a true PARI integer, convert it to Sage
     t_INT_to_ZZ(self.value, (<pari_gen>x).g)
 
+cdef __mpz_struct *get_value(Integer self):
+    return self.value
+
 
 def _test_mpz_set_longlong(long long v):
     """
@@ -1589,6 +1592,9 @@ cdef class Integer(sage.structure.element.EuclideanDomainElement):
 
     cdef void set_from_mpz(Integer self, mpz_t value):
         mpz_set(self.value, value)
+
+    cdef __mpz_struct *get_value(Integer self):
+        return self.value
 
     cdef void _to_ZZ(self, ZZ_c *z):
         sig_on()
@@ -6191,6 +6197,21 @@ cdef class long_to_Z(Morphism):
 ############### INTEGER CREATION CODE #####################
 
 include "sage/ext/python_rich_object.pxi"
+cdef extern from "gmp.h":
+    # We allocate _mp_d directly (mpz_t is typedef of this in GMP)
+    ctypedef struct real_mpz_struct "__mpz_struct":
+        int _mp_alloc
+        int _mp_size
+        mp_ptr _mp_d
+
+    # sets the three free, alloc, and realloc function pointers to the
+    # memory management functions set in GMP. Accepts NULL pointer.
+    # Potentially dangerous if changed by calling
+    # mp_set_memory_functions again after we initialized this module.
+    void mp_get_memory_functions (void *(**alloc) (size_t), void *(**realloc)(void *, size_t, size_t), void (**free) (void *, size_t))
+
+    # GMP's configuration of how many Bits are stuffed into a limb
+    cdef int GMP_LIMB_BITS
 
 # This variable holds the size of any Integer object in bytes.
 cdef int sizeof_Integer
@@ -6272,8 +6293,18 @@ cdef PyObject* fast_tp_new(PyTypeObject *t, PyObject *a, PyObject *k):
         #  various internals described here may change in future GMP releases.
         #  Applications expecting to be compatible with future releases should use
         #  only the documented interfaces described in previous chapters."
-        new_mpz = <mpz_ptr>((<Integer>new).value)
-        new_mpz._mp_d = <mp_ptr>sage_malloc(GMP_LIMB_BITS >> 3)
+        #
+        # If this line is used Sage is not such an application.
+        #
+        # The clean version of the following line is:
+        #
+        #  mpz_init( <mpz_t>(<char *>new + mpz_t_offset) )
+        #
+        # We save time both by avoiding an extra function call and
+        # because the rest of the mpz struct was already initialized
+        # fully using the memcpy above.
+
+        (<real_mpz_struct *>( <char *>new + mpz_t_offset) )._mp_d = <mp_ptr>mpz_alloc(GMP_LIMB_BITS >> 3)
 
     # This line is only needed if Python is compiled in debugging mode
     # './configure --with-pydebug' or SAGE_DEBUG=yes. If that is the
@@ -6309,20 +6340,22 @@ cdef void fast_tp_dealloc(PyObject* o):
 
         # Here we free any extra memory used by the mpz_t by
         # setting it to a single limb.
-        if o_mpz._mp_alloc > 10:
-            _mpz_realloc(o_mpz, 1)
+        if (<real_mpz_struct *>( <char *>o + mpz_t_offset))._mp_alloc > 10:
+            _mpz_realloc(<__mpz_struct *>( <char *>o + mpz_t_offset), 10)
 
         # It's cheap to zero out an integer, so do it here.
-        o_mpz._mp_size = 0
+        (<real_mpz_struct *>( <char *>o + mpz_t_offset))._mp_size = 0
 
         # And add it to the pool.
         integer_pool[integer_pool_count] = o
         integer_pool_count += 1
         return
 
-    # Again, we move to the mpz_t and clear it. As in fast_tp_new,
-    # we free the memory directly.
-    sage_free(o_mpz._mp_d)
+    # Again, we move to the mpz_t and clear it. See above, why this is evil.
+    # The clean version of this line would be:
+    #   mpz_clear(<mpz_t>(<char *>o + mpz_t_offset))
+
+    mpz_free((<real_mpz_struct *>( <char *>o + mpz_t_offset) )._mp_d, 0)
 
     # Free the object. This assumes that Py_TPFLAGS_HAVE_GC is not
     # set. If it was set another free function would need to be
@@ -6340,6 +6373,16 @@ cdef hook_fast_tp_functions():
 
     cdef PyObject* o
     o = <PyObject *>global_dummy_Integer
+
+    # calculate the offset of the GMP mpz_t to avoid casting to/from
+    # an Integer which includes reference counting. Reference counting
+    # is bad in constructors and destructors as it potentially calls
+    # the destructor.
+    # Eventually this may be rendered obsolete by a change in Cython allowing
+    # non-reference counted extension types.
+    mpz_t_offset = <char *>global_dummy_Integer.value - <char *>o
+    global mpz_t_offset_python
+    mpz_t_offset_python = mpz_t_offset
 
     # store how much memory needs to be allocated for an Integer.
     sizeof_Integer = (<RichPyTypeObject *>o.ob_type).tp_basicsize
@@ -6485,7 +6528,7 @@ cdef double mpz_get_d_nearest(mpz_t x) except? -648555075988944.5:
     mpz_tdiv_q_2exp(q, x, shift)
 
     # Convert abs(q) to a 64-bit integer.
-    cdef mp_limb_t* q_limbs = (<mpz_ptr>q)._mp_d
+    cdef mp_ptr q_limbs = (<real_mpz_struct*>q)._mp_d
     cdef uint64_t q64
     if sizeof(mp_limb_t) >= 8:
         q64 = q_limbs[0]

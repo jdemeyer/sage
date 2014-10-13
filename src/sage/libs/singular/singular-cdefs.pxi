@@ -188,7 +188,7 @@ cdef extern from "libsingular.h":
         short P # number of parameters
         int ch # characteristic (0:QQ, p:GF(p),-p:GF(q), 1:NF)
         unsigned int ringtype # field etc.
-        mpz_ptr ringflaga
+        __mpz_struct *ringflaga
         unsigned long ringflagb
         int pCompIndex # index of components
         unsigned long bitmask # mask for getting single exponents

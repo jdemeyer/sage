@@ -181,9 +181,9 @@ cdef class PowComputer_class(SageObject):
                 raise ValueError, "result too big"
             return self.pow_Integer(mpz_get_ui(_n.value))
 
-    cdef mpz_srcptr pow_mpz_t_tmp(self, long n):
+    cdef __mpz_struct *pow_mpz_t_tmp(self, long n):
         """
-        Provides fast access to an ``mpz_srcptr`` pointing to self.prime^n.
+        Provides fast access to a mpz_t of self.prime^n.
 
         The location pointed to depends on the underlying
         representation.  In no circumstances should you mpz_clear the
@@ -264,9 +264,9 @@ cdef class PowComputer_class(SageObject):
         mpz_set(ans.value, self.pow_mpz_t_tmp(mpz_get_ui(_n.value)))
         return ans
 
-    cdef mpz_srcptr pow_mpz_t_top(self):
+    cdef __mpz_struct *pow_mpz_t_top(self):
         """
-        Returns a pointer to self.prime^self.prec_cap as an ``mpz_srcptr``.
+        Returns a pointer to self.prime^self.prec_cap as a mpz_t.
 
         EXAMPLES::
 
@@ -479,9 +479,9 @@ cdef class PowComputer_base(PowComputer_class):
         """
         return PowComputer, (self.prime, self.cache_limit, self.prec_cap, self.in_field)
 
-    cdef mpz_srcptr pow_mpz_t_top(self):
+    cdef __mpz_struct *pow_mpz_t_top(self):
         """
-        Returns a pointer to self.prime^self.prec_cap as an ``mpz_srcptr``.
+        Returns a pointer to self.prime^self.prec_cap as a mpz_t.
 
         EXAMPLES::
 
@@ -491,7 +491,7 @@ cdef class PowComputer_base(PowComputer_class):
         """
         return self.top_power
 
-    cdef mpz_srcptr pow_mpz_t_tmp(self, long n):
+    cdef __mpz_struct *pow_mpz_t_tmp(self, long n):
         """
         Computes self.prime^n.
 

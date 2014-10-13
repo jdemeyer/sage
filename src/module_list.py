@@ -682,8 +682,8 @@ ext_modules = [
               extra_compile_args = ["-std=c99", "-D_XPG6"],
               depends = flint_depends),
 
-    Extension('sage.libs.flint.fmpz_poly',
-              sources = ["sage/libs/flint/fmpz_poly.pyx"],
+    Extension('sage.libs.flint.fmpz_poly_old',
+              sources = ["sage/libs/flint/fmpz_poly_old.pyx"],
               libraries = ["flint", "gmp", "gmpxx", "m", "stdc++"],
               extra_compile_args = ["-std=c99", "-D_XPG6"],
               depends = flint_depends),
@@ -2109,7 +2109,7 @@ ext_modules = [
     ## sage.schemes
     ##
     ################################
-    
+
     Extension('sage.schemes.projective.projective_morphism_helper',
               sources = ['sage/schemes/projective/projective_morphism_helper.pyx']),
     ]

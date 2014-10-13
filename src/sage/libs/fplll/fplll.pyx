@@ -1460,7 +1460,7 @@ cdef to_sage(ZZ_mat[mpz_t] *A):
 
     cdef Matrix_integer_dense B = <Matrix_integer_dense>matrix(ZZ, A.getRows(), A.getCols())
 
-    for i from 0 <= i < A.getRows():
-        for j from 0 <= j < A.getCols():
-            B.set_unsafe_mpz(i,j,A[0][i][j].getData())
+    for i in range(A.getRows()):
+        for j in range(A.getCols()):
+            mpz_set(B._matrix[i][j], A[0][i][j].getData())
     return B

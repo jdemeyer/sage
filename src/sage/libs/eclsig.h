@@ -41,7 +41,10 @@ inline void ecl_sig_off()
     sig_off();
 }
 
-#define ecl_mpz_from_bignum(obj) ((obj)->big.big_num)
+inline __mpz_struct *ecl_mpz_from_bignum(cl_object obj)
+{
+    return obj->big.big_num;
+}
 
 cl_object ecl_bignum_from_mpz(mpz_t num)
 {

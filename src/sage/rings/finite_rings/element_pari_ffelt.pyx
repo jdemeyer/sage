@@ -220,7 +220,7 @@ cdef class FiniteFieldElement_pari_ffelt(FinitePolyExtElement):
             if self._parent.characteristic().divides(x.modulus()):
                 g = (<pari_gen>self._parent._gen_pari).g
                 pari_catch_sig_on()
-                x_GEN = pari._new_GEN_from_mpz_t(Integer(x).value)
+                x_GEN = pari._new_GEN_from_mpz_t((<Integer>x).value)
                 self.construct(_INT_to_FFELT(g, x_GEN))
             else:
                 raise TypeError("no coercion defined")
@@ -272,7 +272,7 @@ cdef class FiniteFieldElement_pari_ffelt(FinitePolyExtElement):
                 set_gel(f, 1, gmael(g, 2, 1))
                 for i in xrange(n):
                     xi = Integer(x[i])
-                    set_gel(f, i + 2, pari._new_GEN_from_mpz_t(xi.value))
+                    set_gel(f, i + 2, pari._new_GEN_from_mpz_t((<Integer>xi).value))
             elif t == t_FF_Flxq or t == t_FF_F2xq:
                 f = cgetg(n + 2, t_VECSMALL)
                 set_gel(f, 1, gmael(g, 2, 1))

@@ -668,8 +668,8 @@ cdef MPF_add(MPF *r, MPF *s, MPF *t, MPopts opts):
         if shift >= 0:
             # |s| >> |t|
             if shift > 2*opts.prec and opts.prec:
-                sbc = mpz_sizeinbase(s.man, 2)
-                tbc = mpz_sizeinbase(t.man, 2)
+                sbc = mpz_sizeinbase(s.man,2)
+                tbc = mpz_sizeinbase(t.man,2)
                 if shift + sbc - tbc > opts.prec+8:
                     _add_perturbation(r, s, mpz_sgn(t.man), opts)
                     return
@@ -682,8 +682,8 @@ cdef MPF_add(MPF *r, MPF *s, MPF *t, MPopts opts):
             shift = -shift
             # |s| << |t|
             if shift > 2*opts.prec and opts.prec:
-                sbc = mpz_sizeinbase(s.man, 2)
-                tbc = mpz_sizeinbase(t.man, 2)
+                sbc = mpz_sizeinbase(s.man,2)
+                tbc = mpz_sizeinbase(t.man,2)
                 if shift + tbc - sbc > opts.prec+8:
                     _add_perturbation(r, t, mpz_sgn(s.man), opts)
                     return
@@ -722,8 +722,8 @@ cdef MPF_sub(MPF *r, MPF *s, MPF *t, MPopts opts):
         if shift >= 0:
             # |s| >> |t|
             if shift > 2*opts.prec and opts.prec:
-                sbc = mpz_sizeinbase(s.man, 2)
-                tbc = mpz_sizeinbase(t.man, 2)
+                sbc = mpz_sizeinbase(s.man,2)
+                tbc = mpz_sizeinbase(t.man,2)
                 if shift + sbc - tbc > opts.prec+8:
                     _add_perturbation(r, s, -mpz_sgn(t.man), opts)
                     return
@@ -736,8 +736,8 @@ cdef MPF_sub(MPF *r, MPF *s, MPF *t, MPopts opts):
             shift = -shift
             # |s| << |t|
             if shift > 2*opts.prec and opts.prec:
-                sbc = mpz_sizeinbase(s.man, 2)
-                tbc = mpz_sizeinbase(t.man, 2)
+                sbc = mpz_sizeinbase(s.man,2)
+                tbc = mpz_sizeinbase(t.man,2)
                 if shift + tbc - sbc > opts.prec+8:
                     _add_perturbation(r, t, -mpz_sgn(s.man), opts)
                     MPF_neg(r, r)

@@ -19,14 +19,14 @@ include "sage/ext/interrupt.pxi"
 include "sage/ext/gmp.pxi"
 include "sage/ext/cdefs.pxi"
 
-include "sage/libs/ntl/decl.pxi"
-include "sage/libs/flint/fmpq_poly.pxi"
+from sage.libs.flint.fmpz cimport *
+from sage.libs.flint.fmpq cimport *
+from sage.libs.flint.fmpz_poly cimport *
+from sage.libs.flint.ntl_interface cimport *
 
 from sage.interfaces.all import singular as singular_default
 
 from sage.libs.all import pari, pari_gen
-from sage.libs.flint.ntl_interface cimport *
-from sage.libs.flint.fmpz_poly cimport fmpz_poly_set
 
 from sage.rings.integer cimport Integer
 from sage.rings.integer_ring import ZZ
@@ -40,7 +40,6 @@ from sage.rings.polynomial.polynomial_integer_dense_flint cimport Polynomial_int
 from sage.structure.element cimport Element, ModuleElement, RingElement
 from sage.structure.element import coerce_binop
 from sage.structure.factorization import Factorization
-
 
 cdef inline bint _do_sig(fmpq_poly_t op):
     """
@@ -61,9 +60,9 @@ cdef inline bint _do_sig(fmpq_poly_t op):
     """
     # Trac #12173: check that the degree is greater than 1000 before computing
     # the max limb size
-    return fmpq_poly_length(op) > 0 and \
-       (fmpq_poly_degree(op) > 1000 or
-        _fmpz_vec_max_limbs(fmpq_poly_numref(op), fmpq_poly_length(op)) > 1)
+    return (fmpq_poly_length(op) > 0 and
+            (fmpq_poly_degree(op) > 1000 or
+                sage_fmpq_poly_max_limbs(op) > 1))
 
 cdef class Polynomial_rational_flint(Polynomial):
     """
