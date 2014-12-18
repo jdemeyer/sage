@@ -19,7 +19,8 @@ from banner import version, banner
 
 from temporary_file import tmp_dir, tmp_filename
 
-from misc_c import prod, running_total, balanced_sum, is_64_bit, is_32_bit
+from misc_c import prod, running_total, balanced_sum
+lazy_import('sage.misc.misc_c', ['is_32_bit', 'is_64_bit'], deprecation=17460)
 mul = prod
 add = sum
 
