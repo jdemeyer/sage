@@ -1460,21 +1460,13 @@ cdef class RealNumber(sage.structure.element.RingElement):
             mpfr_set_ui(self.value, 0, GMP_RNDN)
             return
 
-        cdef int wordsize
-
-        from sage.misc.all import is_64_bit
-        if is_64_bit:
-            wordsize = 64
-        else:
-            wordsize = 32
+        cdef int wordsize = 8 * sizeof(long)
 
         cdef mpz_t mantissa
         mpz_init(mantissa)
-
         mpz_import(mantissa, lg(g) - 2, 1, wordsize/8, 0, 0, &g[2])
 
-        cdef mp_exp_t exponent
-        exponent = expo(g)
+        cdef mp_exp_t exponent = expo(g)
 
         # Round to nearest for best results when setting a low-precision
         # MPFR from a high-precision GEN
