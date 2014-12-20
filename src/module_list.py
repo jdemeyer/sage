@@ -311,6 +311,9 @@ ext_modules = [
     Extension('sage.ext.interactive_constructors_c',
               sources = ['sage/ext/interactive_constructors_c.pyx']),
 
+    Extension('sage.ext.interrupt',
+              sources = ['sage/ext/interrupt.pyx']),
+
     Extension('sage.ext.multi_modular',
               sources = ['sage/ext/multi_modular.pyx'],
               extra_compile_args = ['-std=c99'],

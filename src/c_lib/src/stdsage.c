@@ -19,7 +19,6 @@
 
 
 #include "stdsage.h"
-#include "interrupt.h"
 
 PyObject* global_empty_tuple;
 
@@ -48,7 +47,6 @@ void global_NTL_error_callback(const char* s, void* context)
 void init_csage() {
     init_global_empty_tuple();
     init_memory_functions();
-    setup_sage_signal_handler();
     setup_NTL_error_callback(global_NTL_error_callback, NULL);
 }
 
