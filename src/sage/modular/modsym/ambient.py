@@ -608,7 +608,7 @@ class ModularSymbolsAmbient(space.ModularSymbolsSpace, hecke.AmbientHeckeModule)
             self.__manin_symbol = {}
         except KeyError:
             pass
-        y = self.manin_symbols()(x)
+        y = manin_symbols.ManinSymbol(self.manin_symbols(), x)
         z = self(y)
         self.__manin_symbol[x] = z
         return z
@@ -1100,7 +1100,7 @@ class ModularSymbolsAmbient(space.ModularSymbolsSpace, hecke.AmbientHeckeModule)
         k = self.weight()
         for n in B:
             z = M(0)
-            i, u, v = syms[n].tuple()
+            i, u, v = syms[n]
             # We apply each Heilbronn matrix to the
             #    Manin symbol [X^i*Y^(k-2-i), (u,v)]
             for h in H:

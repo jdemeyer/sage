@@ -75,13 +75,14 @@ def is_ManinSymbol(x):
 
         sage: from sage.modular.modsym.manin_symbols import ManinSymbol, ManinSymbolList_gamma0, is_ManinSymbol
         sage: m = ManinSymbolList_gamma0(6, 4)
-        sage: s = ManinSymbol(m, m.symbol_list()[3])
+        sage: is_ManinSymbol(m[3])
+        False
+        sage: s = ManinSymbol(m,m[3])
         sage: s
         [Y^2,(1,2)]
         sage: is_ManinSymbol(s)
         True
-        sage: is_ManinSymbol(m[3])
-        True
+
     """
     return isinstance(x, ManinSymbol)
 
@@ -497,7 +498,7 @@ class ManinSymbolList(Parent):
 
     Element = ManinSymbol
 
-    def __init__(self, weight, lst):
+    def __init__(self, weight, list):
         """
         Constructor for a ManinSymbolList.
 
@@ -505,7 +506,7 @@ class ManinSymbolList(Parent):
 
         - ``weight`` -- the weight of the symbols
 
-        - ``lst`` -- the list of symbols
+        - ``list`` -- the list of symbols
 
         On construction, a ManinSymbolList constructs a dict for
         rapid determination of the index of any given symbol.
@@ -520,12 +521,13 @@ class ManinSymbolList(Parent):
 
             sage: from sage.modular.modsym.manin_symbols import ManinSymbolList
             sage: ManinSymbolList(6,P1List(11))
-            <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_with_category'>
+            <class 'sage.modular.modsym.manin_symbols.ManinSymbolList'>
+
         """
         self._weight = weight
-        self._symbol_list = lst
-        self._index = {x: i for i,x in enumerate(lst)}
-        Parent.__init__(self, category=FiniteEnumeratedSets())
+        self._list = list
+        self._index = dict([(list[i],i) for i in range(len(list))])
+        Parent.__init__(self)
 
     def _element_constructor_(self, x):
         """
@@ -539,7 +541,10 @@ class ManinSymbolList(Parent):
             [X^2*Y^2,(3,5)]
             sage: m(x) == x
             True
+
         """
+        if isinstance(x, self.element_class) and parent(x) is self:
+            return x
         if isinstance(x, ManinSymbol):
             x = x.tuple()
         return self.element_class(self, x)
@@ -563,19 +568,20 @@ class ManinSymbolList(Parent):
         """
         if not isinstance(right, ManinSymbolList):
             return cmp(type(self), type(right))
-        return cmp((self._weight, self._symbol_list),
-                   (right._weight, right._symbol_list))
+        return cmp((self._weight, self._list), (right._weight, right._list))
 
-    def symbol_list(self):
+    def __getitem__(self, n):
         """
-        Return the list of symbols of ``self``.
+        Returns the `n`th ManinSymbol in this ManinSymbolList
 
         EXAMPLES::
 
             sage: from sage.modular.modsym.manin_symbols import ManinSymbolList
             sage: m = ManinSymbolList(6, P1List(11))
+            sage: m[4]
+            (1, 3)
         """
-        return list(self._symbol_list) # This makes a shallow copy
+        return self._list[n]
 
     def __len__(self):
         """
@@ -588,7 +594,7 @@ class ManinSymbolList(Parent):
             sage: len(m)
             12
         """
-        return len(self._symbol_list)
+        return len(self._list)
 
     def apply(self, j, X):
         """
@@ -714,10 +720,9 @@ class ManinSymbolList(Parent):
 
             sage: from sage.modular.modsym.manin_symbols import ManinSymbolList
             sage: m = ManinSymbolList(6,P1List(11))
-            sage: m.index(m.symbol_list()[2])
+            sage: m.index(m[2])
             2
-            sage: S = m.symbol_list()
-            sage: all([i == m.index(S[i]) for i in xrange(len(S))])
+            sage: all([i == m.index(m[i]) for i in xrange(len(m))])
             True
         """
         if x in self._index:
@@ -766,8 +771,6 @@ class ManinSymbolList(Parent):
                                         for i in xrange(len(self))]
         return copy.copy(self.__manin_symbol_list)
 
-    list = manin_symbol_list
-
     def manin_symbol(self, i):
         """
         Returns the ``i``-th ManinSymbol in this ManinSymbolList.
@@ -793,9 +796,9 @@ class ManinSymbolList(Parent):
             sage: s = m.manin_symbol(3); s
             [Y^2,(1,2)]
             sage: type(s)
-            <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_gamma0_with_category.element_class'>
+            <class 'sage.modular.modsym.manin_symbols.ManinSymbol'>
         """
-        return self.element_class(self, self._symbol_list[i])
+        return ManinSymbol(self, self._list[int(i)])
 
     def normalize(self, x):
         """
@@ -847,7 +850,7 @@ class ManinSymbolList_group(ManinSymbolList):
 
         sage: from sage.modular.modsym.manin_symbols import ManinSymbolList_group
         sage: ManinSymbolList_group(11, 2, P1List(11))
-        <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_group_with_category'>
+        <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_group'>
 
     """
     def __init__(self, level, weight, syms):
@@ -866,8 +869,9 @@ class ManinSymbolList_group(ManinSymbolList):
         EXAMPLES::
 
             sage: from sage.modular.modsym.manin_symbols import ManinSymbolList_group
-            sage: L = ManinSymbolList_group(11, 2, P1List(11)); L
-            <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_group_with_category'>
+            sage: ManinSymbolList_group(11, 2, P1List(11))
+            <class 'sage.modular.modsym.manin_symbols.ManinSymbolList_group'>
+
         """
         self.__level = level
         self.__syms = syms  # syms is anything with a normalize and list method.
@@ -940,7 +944,7 @@ class ManinSymbolList_group(ManinSymbolList):
             (4, 1),
             (2, 1)]
         """
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         k = self.index((self._weight-2-i, v, -u))
         if i%2 == 0:
             return k, 1
@@ -993,7 +997,7 @@ class ManinSymbolList_group(ManinSymbolList):
             (11, -1),
             (10, -1)]
         """
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         k = self.index((i, -u, v))
         if i%2==0:
             return k, 1
@@ -1029,7 +1033,7 @@ class ManinSymbolList_group(ManinSymbolList):
             [(2, 1), (8, -5), (14, 10), (20, -10), (26, 5), (32, -1)]]
         """
         k = self._weight
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         u, v = self.__syms.normalize(v,-u-v)
         if (k-2) % 2 == 0:
             s = 1
@@ -1072,7 +1076,7 @@ class ManinSymbolList_group(ManinSymbolList):
             [(34, -1), (40, 1)]]
         """
         k = self._weight
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         u, v = self.__syms.normalize(-u-v,u)
         if (k-2-i) % 2 == 0:
             s = 1
@@ -1114,7 +1118,7 @@ class ManinSymbolList_group(ManinSymbolList):
              (24, 2160), (30, 576), (36, 64)]
         """
         a, b, c, d = m[0], m[1], m[2], m[3]
-        i, u, v = self._symbol_list[j]
+        i, u, v = self[j]
         P = apply_to_monomial(i, self._weight-2, a, b, c, d)
         m = self.index((0, u*a+v*c, u*b+v*d))
         if m == -1:
@@ -1376,7 +1380,7 @@ class ManinSymbolList_character(ManinSymbolList):
             Manin Symbol List of weight 2 for Gamma1(4) with character [-1]
             sage: m.manin_symbol_list()
             [(0,1), (1,0), (1,1), (1,2), (1,3), (2,1)]
-            sage: TestSuite(m).run()
+
         """
         self.__level = character.modulus()
         self.__P1 = p1list.P1List(self.level())
@@ -1457,14 +1461,14 @@ class ManinSymbolList_character(ManinSymbolList):
             sage: from sage.modular.modsym.manin_symbols import ManinSymbolList_character
             sage: m = ManinSymbolList_character(eps,4)
             sage: m[6]
-            [X*Y,(0,1)]
+            (1, 0, 1)
             sage: m.apply(4, [1,0,0,1])
             [(4, 1)]
             sage: m.apply(1, [-1,0,0,1])
             [(1, -1)]
         """
         a, b, c, d = m[0], m[1], m[2], m[3]
-        i, u, v = self._symbol_list[j]
+        i, u, v = self[int(j)]
         P = apply_to_monomial(i, self._weight-2, a, b, c, d)
         m, s = self.index((0, u*a+v*c, u*b+v*d))
         if m == -1 or s == 0:
@@ -1498,7 +1502,7 @@ class ManinSymbolList_character(ManinSymbolList):
             sage: [m.apply_S(i) for i in xrange(len(m))]
             [(1, 1), (0, -1), (4, 1), (5, -1), (2, -1), (3, 1)]
         """
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         k, s = self.index((self._weight-2-i, v, -u))
         if i%2 == 0:
             return k, s
@@ -1547,7 +1551,7 @@ class ManinSymbolList_character(ManinSymbolList):
             sage: [m.apply_I(i) for i in xrange(len(m))]
             [(0, 1), (1, -1), (4, -1), (3, -1), (2, -1), (5, 1)]
         """
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         k, s = self.index((i, -u, v))
         if i%2==0:
             return k, s
@@ -1581,7 +1585,7 @@ class ManinSymbolList_character(ManinSymbolList):
             [[(4, 1)], [(0, -1)], [(3, 1)], [(5, 1)], [(1, -1)], [(2, 1)]]
         """
         k = self._weight
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         u, v, r = self.__P1.normalize_with_scalar(v,-u-v)
         r = self.__character(r)
         if (k-2) % 2 == 0:
@@ -1623,7 +1627,7 @@ class ManinSymbolList_character(ManinSymbolList):
             [[(1, -1)], [(4, -1)], [(5, 1)], [(2, 1)], [(0, 1)], [(3, 1)]]
         """
         k = self._weight
-        i, u, v = self._symbol_list[j]
+        i, u, v = self._list[j]
         u, v, r = self.__P1.normalize_with_scalar(-u-v,u)
         r = self.__character(r)
         if (k-2-i) % 2 == 0:
