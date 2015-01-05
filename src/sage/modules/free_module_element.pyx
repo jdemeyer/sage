@@ -159,23 +159,20 @@ def vector(arg0, arg1=None, arg2=None, sparse=None):
 
         5. vector(ring, degree)
 
-        6. vector(numpy_array)
-
     INPUT:
 
-    -  ``object`` - a list, dictionary, or other
-       iterable containing the entries of the vector, including
-       any object that is palatable to the ``Sequence`` constructor
+    - ``object`` -- a list, dictionary, or other
+      iterable containing the entries of the vector, including
+      any object that is palatable to the ``Sequence`` constructor
 
-    -  ``ring`` - a base ring (or field) for the vector
-       space or free module, which contains all of the elements
+    - ``ring`` -- a base ring (or field) for the vector space or free module,
+      which contains all of the elements
 
-    -  ``degree`` - an integer specifying the number of
-       entries in the vector or free module element
+    - ``degree`` -- an integer specifying the number of
+      entries in the vector or free module element
 
-    -  ``numpy_array`` - a NumPy array with the desired entries
-
-    -  ``sparse`` - optional
+    - ``sparse`` -- boolean, whether the result should be a sparse
+      vector
 
     In call format 4, an error is raised if the ``degree`` does not match
     the length of ``object`` so this call can provide some safeguards.
@@ -184,8 +181,8 @@ def vector(arg0, arg1=None, arg2=None, sparse=None):
 
     OUTPUT:
 
-    An element of the vector space or free module with the given
-    base ring and implied or specified dimension or rank,
+    An element of the ambient vector space or free module with the
+    given base ring and implied or specified dimension or rank,
     containing the specified entries and with correct degree.
 
     In call format 5, no entries are specified, so the element is
@@ -383,7 +380,7 @@ def vector(arg0, arg1=None, arg2=None, sparse=None):
         Complex Double Field
 
     If the argument is a vector, it doesn't change the base ring. This
-    fixes :trac:`6643`. ::
+    fixes :trac:`6643`::
 
         sage: K.<sqrt3> = QuadraticField(3)
         sage: u = vector(K, (1/2, sqrt3/2) )
@@ -985,7 +982,7 @@ cdef class FreeModuleElement(Vector):   # abstract base class
             (1, sqrt(2))
         """
         if R is None:
-            R = self.base_ring()
+            return self
         return self.change_ring(R)
 
     def _matrix_(self, R=None):
@@ -995,15 +992,22 @@ cdef class FreeModuleElement(Vector):   # abstract base class
         EXAMPLES::
 
             sage: v = vector(ZZ, [2, 12, 22])
-            sage: vector(v)
-            (2, 12, 22)
-            sage: vector(GF(7), v)
-            (2, 5, 1)
-            sage: vector(v, ZZ['x', 'y'])
-            (2, 12, 22)
+            sage: v._matrix_()
+            [ 2 12 22]
+            sage: v._matrix_(GF(7))
+            [2 5 1]
+            sage: v._matrix_(ZZ['x', 'y'])
+            [ 2 12 22]
+            sage: v = ((ZZ^3)*(1/2))( (1/2, -1, 3/2) )
+            sage: v._matrix_()
+            [1/2  -1 3/2]
+            sage: v._matrix_(ZZ)
+            Traceback (most recent call last):
+            ...
+            TypeError: no conversion of this rational to integer
         """
         if R is None:
-            R = self.base_ring()
+            R = self.coordinate_ring()
         sparse = self.is_sparse()
         from sage.matrix.constructor import matrix
         return matrix(R, [list(self)], sparse=sparse)
@@ -1413,19 +1417,35 @@ cdef class FreeModuleElement(Vector):   # abstract base class
 
     def change_ring(self, R):
         """
-        Change the base ring of this vector, by coercing each element of
-        this vector into R.
+        Change the base ring of this vector.
 
         EXAMPLES::
 
             sage: v = vector(QQ['x,y'], [1..5]); v.change_ring(GF(3))
             (1, 2, 0, 1, 2)
         """
-        P = self.parent()
-        if P.base_ring() is R:
+        if self.base_ring() is R:
             return self
-        v = [R(x) for x in self]
-        return P.change_ring(R)._element_constructor_(v)
+        M = self._parent.change_ring(R)
+        return M._element_constructor_(self.list(), coerce=True)
+
+    def coordinate_ring(self):
+        """
+        Return the ring from which the coefficients of this vector come.
+
+        This is different from :meth:`base_ring`, which returns the ring
+        of scalars.
+
+        EXAMPLES::
+
+            sage: M = (ZZ^2) * (1/2)
+            sage: v = M([0,1/2])
+            sage: v.base_ring()
+            Integer Ring
+            sage: v.coordinate_ring()
+            Rational Field
+        """
+        return self._parent.coordinate_ring()
 
     def additive_order(self):
         """
@@ -3600,7 +3620,7 @@ cdef class FreeModuleElement_generic_dense(FreeModuleElement):
             sage: N([1/x^2])
             Traceback (most recent call last):
             ...
-            TypeError: element (= [1/x^2]) is not in free module
+            TypeError: element [1/x^2] is not in free module
 
         ::
 
@@ -3625,7 +3645,7 @@ cdef class FreeModuleElement_generic_dense(FreeModuleElement):
             if len(entries) != self._degree:
                 raise TypeError("entries must be a list of length %s" % self.degree())
             if coerce:
-                coefficient_ring = parent.basis()[0][0].parent()
+                coefficient_ring = parent.coordinate_ring()
                 try:
                     entries = [coefficient_ring(x) for x in entries]
                 except TypeError:
@@ -4089,7 +4109,7 @@ cdef class FreeModuleElement_generic_sparse(FreeModuleElement):
             sage: N({0:1/x^2})
             Traceback (most recent call last):
             ...
-            TypeError: element (= {0: 1/x^2}) is not in free module
+            TypeError: element {0: 1/x^2} is not in free module
 
         ::
 
@@ -4139,7 +4159,7 @@ cdef class FreeModuleElement_generic_sparse(FreeModuleElement):
                 else:
                     raise TypeError("entries must be a dict, list or tuple, not %s", type(entries))
             if coerce:
-                coefficient_ring = parent.basis()[0][0].parent()
+                coefficient_ring = parent.coordinate_ring()
                 e = entries
                 entries = {}
                 try:
