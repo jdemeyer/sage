@@ -429,10 +429,10 @@ class ModularSymbolsAmbient(space.ModularSymbolsSpace, hecke.AmbientHeckeModule)
 
         Manin symbols can be converted to elements of the space::
 
-            sage: from sage.modular.modsym.manin_symbols import ManinSymbol
-            sage: ManinSymbol(M.manin_symbols(),(0,2,3))
+            sage: S = M.manin_symbols()
+            sage: S((0,2,3))
             (2,3)
-            sage: M(ManinSymbol(M.manin_symbols(),(0,2,3)))
+            sage: M( S((0,2,3)) )
             (1,34) - (1,35)
 
         However, it is easier to use one of the following forms.
@@ -1830,15 +1830,9 @@ class ModularSymbolsAmbient(space.ModularSymbolsSpace, hecke.AmbientHeckeModule)
     def manin_symbols_basis(self):
         """
         A list of Manin symbols that form a basis for the ambient space
-        self. INPUT:
-
-
-        -  ``ModularSymbols self`` - an ambient space of
-           modular symbols
-
+        ``self``.
 
         OUTPUT:
-
 
         -  ``list`` - a list of 2-tuples (if the weight is 2)
            or 3-tuples, which represent the Manin symbols basis for self.
