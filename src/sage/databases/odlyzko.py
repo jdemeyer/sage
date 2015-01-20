@@ -20,7 +20,7 @@ Tables of zeros of the Riemann-Zeta function
 
 import os
 
-import sage.misc.db as db
+from sage.structure.sage_object import load, save
 from sage.env import SAGE_SHARE
 from sage.misc.all import verbose
 
@@ -57,8 +57,8 @@ def zeta_zeros():
     file = os.path.join(path,'zeros1')
     if os.path.exists(file+".pickle"):
         verbose("Loading Odlyzko database from " + file + ".pickle")
-        return db.load(file+".pickle")
+        return load(file+".pickle")
     verbose("Creating Odlyzko Database.")
     F = [eval(x) for x in open(file).read().split()]
-    db.save(F, file+".pickle")
+    save(F, file+".pickle")
     return F
