@@ -383,7 +383,8 @@ class Singular(Expect):
                         terminal_echo=False,
                         name = 'singular',
                         prompt = prompt,
-                        command = "Singular -t --ticks-per-sec 1000", #no tty and fine grained cputime()
+                        # No tty, fine grained cputime(), don't display CTRL-C prompt
+                        command = "Singular -t --ticks-per-sec 1000 --cntrlc=a",
                         maxread = maxread,
                         server = server,
                         server_tmpdir = server_tmpdir,
@@ -464,6 +465,32 @@ class Singular(Expect):
             'quit'
         """
         return 'quit'
+
+    def _send_interrupt(self):
+        """
+        Send an interrupt and a semi-colon to Singular.
+
+        TESTS:
+
+        The semi-colon is needed to abort the current input line. The
+        following works without restarting Singular::
+
+            sage: a = singular(1)
+            sage: _ = singular._expect.sendline('1+')  # unfinished input
+            sage: try:
+            ....:    alarm(0.5)
+            ....:    singular._expect_expr('>')  # interrupt this
+            ....: except KeyboardInterrupt:
+            ....:     pass
+            Control-C pressed.  Interrupting Singular. Please wait a few seconds...
+
+        We can still access a::
+
+            sage: 2*a
+            2
+        """
+        E = self._expect
+        E.sendline(chr(3))
 
     def _read_in_file_command(self, filename):
         r"""

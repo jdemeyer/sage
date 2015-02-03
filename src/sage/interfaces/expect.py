@@ -788,8 +788,8 @@ If this all works, you can then make calls like:
             sage: singular._eval_using_file_cutoff = 4
             sage: singular._eval_line('for(int i=1;i<=3;i++){i=1;};', wait_for_prompt=False)
             ''
-            sage: singular.interrupt(timeout=3)  # sometimes very slow (up to 60s on sage.math, 2012)
-            False
+            sage: singular.interrupt()
+            True
             sage: singular._eval_using_file_cutoff = cutoff
 
         Last, we demonstrate that by default the execution of a command
@@ -876,8 +876,6 @@ If this all works, you can then make calls like:
                     out = E.before
                 else:
                     out = E.before.rstrip('\n\r')
-                    if out == '':   # match bug with echo
-                        out = line
             else:
                 if self._terminal_echo:
                     out = '\n\r'
@@ -908,7 +906,7 @@ If this all works, you can then make calls like:
             self._expect.expect(self._prompt)
             raise KeyboardInterrupt("Ctrl-c pressed while running %s"%self)
 
-    def interrupt(self, tries=20, timeout=0.3, quit_on_fail=True):
+    def interrupt(self, tries=1, timeout=10, quit_on_fail=True):
         E = self._expect
         if E is None:
             return True
@@ -916,20 +914,20 @@ If this all works, you can then make calls like:
         try:
             for i in range(tries):
                 self._send_interrupt()
+                # Forget all characters which were seen before the interrupt
+                E.buffer = ""
                 try:
                     E.expect(self._prompt, timeout=timeout)
                 except (pexpect.TIMEOUT, pexpect.EOF) as msg:
                     pass
                 else:
-                    success = True
-                    break
+                    return True
         except Exception as msg:
             pass
-        if success:
-            pass
-        elif quit_on_fail:
+        if quit_on_fail:
+            self._crash_msg()
             self.quit()
-        return success
+        return False
 
     ###########################################################################
     # BEGIN Synchronization code.
