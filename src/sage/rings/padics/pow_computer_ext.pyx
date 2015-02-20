@@ -48,7 +48,6 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
-include "sage/ext/gmp.pxi"
 include "sage/ext/interrupt.pxi"
 include "sage/ext/stdsage.pxi"
 from cpython.list cimport *
@@ -618,22 +617,7 @@ cdef class PowComputer_ext(PowComputer_class):
             ZZ_to_mpz(self.temp_m, &self.top_power)
         else:
             mpz_pow_ui(self.temp_m, self.prime.value, n)
-        return <mpz_srcptr>address_of_mpz(self.temp_m)
-
-    #def _pow_mpz_t_tmp_test(self, n):
-    #    """
-    #    Test for the pow_mpz_t_tmp function.  See that function's documentation for important warnings.
-    #
-    #    EXAMPLES:
-    #    sage: PC = PowComputer_ext_maker(5, 10, 10, 20, False, ntl.ZZ_pX([-5, 0, 1], 5^10), 'small', 'e',ntl.ZZ_pX([1],5^10))
-    #    sage: PC._pow_mpz_t_tmp_test(4) #indirect doctest
-    #    625
-    #    """
-    #    cdef Integer _n = Integer(n)
-    #    if _n < 0: raise ValueError
-    #    cdef Integer ans = PY_NEW(Integer)
-    #    mpz_set(ans.value, self.pow_mpz_t_tmp(mpz_get_si(_n.value))[0])
-    #    return ans
+        return self.temp_m
 
     cdef ZZ_c* pow_ZZ_tmp(self, long n):
         """
@@ -679,7 +663,7 @@ cdef class PowComputer_ext(PowComputer_class):
         """
         cdef Integer _n = Integer(n)
         if _n < 0: raise ValueError
-        cdef ntl_ZZ ans = PY_NEW(ntl_ZZ)
+        cdef ntl_ZZ ans = ntl_ZZ.__new__(ntl_ZZ)
         ans.x = self.pow_ZZ_tmp(mpz_get_ui(_n.value))[0]
         return ans
 
@@ -715,7 +699,7 @@ cdef class PowComputer_ext(PowComputer_class):
         n = Integer(n)
         if m < 0 or n < 0:
             raise ValueError, "m, n must be non-negative"
-        cdef ntl_ZZ ans = PY_NEW(ntl_ZZ)
+        cdef ntl_ZZ ans = ntl_ZZ.__new__(ntl_ZZ)
         ZZ_mul(ans.x, self.pow_ZZ_tmp(mpz_get_ui((<Integer>m).value))[0], self.pow_ZZ_tmp(mpz_get_ui((<Integer>n).value))[0])
         return ans
 
@@ -731,20 +715,7 @@ cdef class PowComputer_ext(PowComputer_class):
             15625
         """
         ZZ_to_mpz(self.temp_m, &self.top_power)
-        return <mpz_srcptr>address_of_mpz(self.temp_m)
-
-    #def _pow_mpz_t_top_test(self):
-    #    """
-    #    Tests the pow_mpz_t_top function
-    #
-    #    EXAMPLES:
-    #    sage: PC = PowComputer_ext_maker(5, 6, 6, 12, False, ntl.ZZ_pX([-5,0,1],5^6),'small', 'e',ntl.ZZ_pX([1],5^6))
-    #    sage: PC._pow_mpz_t_top_test()
-    #    15625
-    #    """
-    #    cdef Integer ans = PY_NEW(Integer)
-    #    mpz_set(ans.value, self.pow_mpz_t_top()[0])
-    #    return ans
+        return self.temp_m
 
     cdef ZZ_c* pow_ZZ_top(self):
         """
@@ -768,7 +739,7 @@ cdef class PowComputer_ext(PowComputer_class):
             sage: PC._pow_ZZ_top_test()
             15625
         """
-        cdef ntl_ZZ ans = PY_NEW(ntl_ZZ)
+        cdef ntl_ZZ ans = ntl_ZZ.__new__(ntl_ZZ)
         ans.x = self.pow_ZZ_top()[0]
         return ans
 
@@ -805,7 +776,7 @@ cdef class PowComputer_ZZ_pX(PowComputer_ext):
         cdef ZZ_pX_Modulus_c* tmp
         tmp.val()
         self.restore_top_context()
-        cdef ntl_ZZ_pX r = PY_NEW(ntl_ZZ_pX)
+        cdef ntl_ZZ_pX r = ntl_ZZ_pX.__new__(ntl_ZZ_pX)
         r.c = self.get_top_context()
         r.x = (self.get_top_modulus()[0]).val()
         return r
@@ -820,7 +791,7 @@ cdef class PowComputer_ZZ_pX(PowComputer_ext):
             sage: PC._get_context_test(15) #indirect doctest
             NTL modulus 30517578125
         """
-        cdef ntl_ZZ pn = PY_NEW(ntl_ZZ)
+        cdef ntl_ZZ pn = ntl_ZZ.__new__(ntl_ZZ)
         if n < 0:
             n = -n
         elif n == 0:
@@ -2247,7 +2218,7 @@ cdef class PowComputer_ZZ_pX_big(PowComputer_ZZ_pX):
             else:
                 c = self.get_context(n)
                 c.restore_c()
-                tmp = PY_NEW(ntl_ZZ_pX)
+                tmp = ntl_ZZ_pX.__new__(ntl_ZZ_pX)
                 tmp.c = c
                 ZZ_pX_conv_modulus(tmp.x, self.top_mod.val(), c.x)
                 holder = ntl_ZZ_pX_Modulus(tmp)

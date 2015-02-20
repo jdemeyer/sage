@@ -326,7 +326,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
         mpz_init(tmp_m)
         mpz_invert(tmp_m, mpq_denref(x), self.prime_pow.pow_mpz_t_top())
         mpz_mul(tmp_m, tmp_m, mpq_numref(x))
-        mpz_mod(tmp_m, tmp_m, &self.prime_pow.pow_mpz_t_top()[0])
+        mpz_mod(tmp_m, tmp_m, self.prime_pow.pow_mpz_t_top())
         mpz_to_ZZ(&tmp_z, tmp_m)
         ZZ_pX_SetCoeff(self.value, 0, ZZ_to_ZZ_p(tmp_z))
         mpz_clear(tmp_m)
@@ -371,7 +371,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
         self.prime_pow.restore_top_context()
         ZZX_to_ZZ_pX(self.value, poly)
 
-    cpdef bint _is_inexact_zero(self):
+    cpdef bint _is_inexact_zero(self) except -1:
         """
         Tests if ``self`` is an inexact zero.
 
@@ -405,7 +405,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
             True
         """
         self.prime_pow.restore_top_context()
-        cdef ntl_ZZ_pX holder = PY_NEW(ntl_ZZ_pX)
+        cdef ntl_ZZ_pX holder = ntl_ZZ_pX.__new__(ntl_ZZ_pX)
         holder.c = self.prime_pow.get_top_context()
         holder.x = self.value
         return make_ZZpXFMElement, (self.parent(), holder)
@@ -439,7 +439,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
             1 + w^5 + O(w^25)
         """
         self.prime_pow.restore_top_context()
-        cdef pAdicZZpXFMElement ans = PY_NEW(pAdicZZpXFMElement)
+        cdef pAdicZZpXFMElement ans = pAdicZZpXFMElement.__new__(pAdicZZpXFMElement)
         ans._parent = self._parent
         ZZ_pX_construct(&ans.value)
         ans.prime_pow = self.prime_pow
@@ -776,7 +776,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
         if right == 0 and self == 0:
             return self.parent(1)
         cdef pAdicZZpXFMElement ans = self._new_c()
-        cdef ntl_ZZ rZZ = PY_NEW(ntl_ZZ)
+        cdef ntl_ZZ rZZ = ntl_ZZ.__new__(ntl_ZZ)
         mpz_to_ZZ(&rZZ.x, (<Integer>right).value)
         if mpz_sgn((<Integer>right).value) < 0:
             if self.valuation_c() > 0:
@@ -1189,7 +1189,7 @@ cdef class pAdicZZpXFMElement(pAdicZZpXElement):
             [89 9 4 1]
         """
         self.prime_pow.restore_top_context()
-        cdef ntl_ZZ_pX ans = PY_NEW(ntl_ZZ_pX)
+        cdef ntl_ZZ_pX ans = ntl_ZZ_pX.__new__(ntl_ZZ_pX)
         ans.c = self.prime_pow.get_top_context()
         ans.x = self.value
         return ans

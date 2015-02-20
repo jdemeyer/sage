@@ -105,6 +105,7 @@ def AffineSpace(n, R=None, names='x'):
             names = ''
         else:
             raise TypeError("You must specify the variables names of the coordinate ring.")
+    names = normalize_names(n, names)
     if R in _Fields:
         if is_FiniteField(R):
             return AffineSpace_finite_field(n, R, names)
@@ -160,7 +161,6 @@ class AffineSpace_generic(AmbientSpace, AffineScheme):
             sage: AffineSpace(3, Zp(5), 'y')
             Affine Space of dimension 3 over 5-adic Ring with capped relative precision 20
         """
-        names = normalize_names(n, names)
         AmbientSpace.__init__(self, n, R)
         self._assign_names(names)
         AffineScheme.__init__(self, self.coordinate_ring(), R)
@@ -193,16 +193,16 @@ class AffineSpace_generic(AmbientSpace, AffineScheme):
         P = [ zero for _ in range(n) ]
         yield self(P)
         iters = [ iter(R) for _ in range(n) ]
-        for x in iters: x.next() # put at zero
+        for x in iters: next(x) # put at zero
         i = 0
         while i < n:
             try:
-                P[i] = iters[i].next()
+                P[i] = next(iters[i])
                 yield self(P)
                 i = 0
             except StopIteration:
                 iters[i] = iter(R)  # reset
-                iters[i].next() # put at zero
+                next(iters[i]) # put at zero
                 P[i] = zero
                 i += 1
 

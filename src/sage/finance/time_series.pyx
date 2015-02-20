@@ -39,7 +39,7 @@ AUTHOR:
 include "sage/ext/cdefs.pxi"
 include "sage/ext/stdsage.pxi"
 include "sage/ext/random.pxi"
-include "sage/ext/python_slice.pxi"
+from cpython.slice cimport PySlice_Check
 from cpython.string cimport *
 
 cdef extern from "math.h":
@@ -2556,7 +2556,7 @@ cdef new_time_series(Py_ssize_t length):
     """
     if length < 0:
         raise ValueError, "length must be nonnegative"
-    cdef TimeSeries t = PY_NEW(TimeSeries)
+    cdef TimeSeries t = TimeSeries.__new__(TimeSeries)
     t._length = length
     t._values = <double*> sage_malloc(sizeof(double)*length)
     return t

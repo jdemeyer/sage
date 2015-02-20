@@ -1813,7 +1813,7 @@ def sage_getsourcelines(obj, is_binary=False):
           '    cpdef object pyobject(self):\n',
         ...)
         sage: sage_getsourcelines(x)[0][-1]    # last line
-        '        return self / x\n'
+        '        return S\n'
 
     We show some enhancements provided by :trac:`11768`. First, we
     use a dummy parent class that has defined an element class by a
@@ -1840,10 +1840,10 @@ def sage_getsourcelines(obj, is_binary=False):
     Here is another example that relies on a nested class definition
     in the background::
 
-        sage: C = Rings()
-        sage: HC = C.hom_category()
+        sage: C = AdditiveMagmas()
+        sage: HC = C.Homsets()
         sage: sage_getsourcelines(HC)
-        (['    class HomCategory(HomCategory):\n', ...)
+        (['    class Homsets(HomsetsCategory):\n', ...], ...)
 
     Testing against a bug that has occured during work on #11768::
 
