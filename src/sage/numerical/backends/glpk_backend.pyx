@@ -20,6 +20,10 @@ from sage.numerical.mip import MIPSolverException
 
 include "sage/ext/interrupt.pxi"
 
+# Work around http://trac.cython.org/ticket/843
+cdef char* _NULL = <char*>0
+
+
 cdef class GLPKBackend(GenericBackend):
 
     def __cinit__(self, maximization = True):
@@ -285,7 +289,7 @@ cdef class GLPKBackend(GenericBackend):
         else:
             glp_set_obj_coef(self.lp, variable + 1, coeff)
 
-    cpdef problem_name(self, char * name = NULL):
+    cpdef problem_name(self, char* name=_NULL):
         """
         Return or define the problem's name
 
@@ -1736,7 +1740,7 @@ cdef class GLPKBackend(GenericBackend):
             raise ValueError("This parameter is not available.")
 
 
-    cpdef int print_ranges(self, char * filename = NULL) except -1:
+    cpdef int print_ranges(self, char* filename=_NULL) except -1:
         r"""
         Print results of a sensitivity analysis
 

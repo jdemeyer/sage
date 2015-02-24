@@ -539,10 +539,13 @@ def run_cythonize():
 
     force = True
     version_file = os.path.join(os.path.dirname(__file__), '.cython_version')
+    # We need to add options to the Cython version stamp to work around
+    # http://trac.cython.org/ticket/842
     version_stamp = '\n'.join([
         'cython version: ' + str(Cython.__version__),
         'debug: ' + str(debug),
         'profile: ' + str(profile),
+        'embedsignature: True'
     ])
     if os.path.exists(version_file) and open(version_file).read() == version_stamp:
         force = False
@@ -554,6 +557,7 @@ def run_cythonize():
         build_dir='build/cythonized',
         force=force,
         compiler_directives={
+            'embedsignature': True,
             'profile': profile,
         })
 

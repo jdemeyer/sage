@@ -69,6 +69,10 @@ from sage.numerical.mip import MIPSolverException
 
 include "sage/ext/interrupt.pxi"
 
+# Work around http://trac.cython.org/ticket/843
+cdef char* _NULL = <char*>0
+
+
 cdef class GLPKGraphBackend(object):
     """
     GLPK Backend for access to GLPK graph functions
@@ -222,7 +226,7 @@ cdef class GLPKGraphBackend(object):
         else:
             ValueError("Input data is not supported")
 
-    cpdef add_vertex(self, char * name = NULL):
+    cpdef add_vertex(self, char* name=_NULL):
         """
         Adds an isolated vertex to the graph.
 

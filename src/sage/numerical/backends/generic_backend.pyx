@@ -26,6 +26,9 @@ AUTHORS:
 #                  http://www.gnu.org/licenses/
 ##############################################################################
 
+# Work around http://trac.cython.org/ticket/843
+cdef char* _NULL = <char*>0
+
 
 cdef class GenericBackend:
 
@@ -574,7 +577,7 @@ cdef class GenericBackend:
         """
         raise NotImplementedError()
 
-    cpdef problem_name(self, char * name = NULL):
+    cpdef problem_name(self, char* name=_NULL):
         """
         Return or define the problem's name
 

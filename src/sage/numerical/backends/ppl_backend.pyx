@@ -24,6 +24,10 @@ from sage.libs.ppl import MIP_Problem, Variable, Linear_Expression, Constraint, 
 from sage.rings.integer cimport Integer
 from sage.rings.rational cimport Rational
 
+# Work around http://trac.cython.org/ticket/843
+cdef char* _NULL = <char*>0
+
+
 cdef class PPLBackend(GenericBackend):
     cdef object mip
     cdef list Matrix
@@ -658,7 +662,7 @@ cdef class PPLBackend(GenericBackend):
         else:
             return 0
 
-    cpdef problem_name(self, char * name = NULL):
+    cpdef problem_name(self, char* name=_NULL):
         """
         Return or define the problem's name
 

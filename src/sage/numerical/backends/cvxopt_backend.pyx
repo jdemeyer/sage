@@ -19,6 +19,10 @@ AUTHORS:
 from sage.numerical.mip import MIPSolverException
 from cvxopt import solvers
 
+# Work around http://trac.cython.org/ticket/843
+cdef char* _NULL = <char*>0
+
+
 cdef class CVXOPTBackend(GenericBackend):
     cdef list objective_function #c_matrix
     cdef list G_matrix
@@ -678,7 +682,7 @@ cdef class CVXOPTBackend(GenericBackend):
         else:
             return 0
 
-    cpdef problem_name(self, char * name = NULL):
+    cpdef problem_name(self, char* name=_NULL):
         """
         Return or define the problem's name
 
