@@ -537,7 +537,6 @@ def run_cythonize():
     # Cython's default).
     Cython.Compiler.Main.default_options['cache'] = True
 
-    force = True
     version_file = os.path.join(os.path.dirname(__file__), '.cython_version')
     version_stamp = '\n'.join([
         'cython version: ' + str(Cython.__version__),
@@ -546,6 +545,23 @@ def run_cythonize():
     ])
     if os.path.exists(version_file) and open(version_file).read() == version_stamp:
         force = False
+    else:
+        force = True
+        # Nuke Cython cache since cycache doesn't use Cython version
+        # and directives in its fingerprint,
+        # see http://trac.cython.org/ticket/842
+        opts = Cython.Compiler.Main.CompilationOptions()
+        d = opts.cache
+        if os.path.isdir(d):
+            print("Deleting Cython cache in {} because Cython version or directives changed".format(d))
+            import shutil
+            shutil.rmtree(d)
+
+        # Empty version file such that the newly created cache isn't
+        # used for anything in case cythonize() below doesn't finish
+        # (due to interrupt or error).
+        open(version_file, 'w').close()
+
 
     global ext_modules
     ext_modules = cythonize(
