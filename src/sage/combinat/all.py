@@ -46,9 +46,8 @@ from rsk import RSK, RSK_inverse, robinson_schensted_knuth, robinson_schensted_k
 #PerfectMatchings
 from perfect_matching import PerfectMatching, PerfectMatchings
 
-# Integer lists lex
-
 from integer_list import IntegerListsLexPublic as IntegerListsLex
+from integer_list_polyhedron import IntegerLists
 
 #Compositions
 from composition import Composition, Compositions
