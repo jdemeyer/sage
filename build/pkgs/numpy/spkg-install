@@ -37,6 +37,8 @@ for patch in $patches; do
     fi
 done
 
+set -e
+
 echo "[DEFAULT]" > site.cfg
 echo "library_dirs = $SAGE_LOCAL/lib" >> site.cfg
 echo "include_dirs = $SAGE_LOCAL/include" >> site.cfg
@@ -58,15 +60,20 @@ export NUMPY_FCONFIG="config_fc --noopt --noarch"
 
 ################################################
 
-rm -rf "$SAGE_LOCAL"/lib/python/site-packages/numpy
+rm -rf "$SAGE_LOCAL/lib/python/site-packages/numpy" "$SAGE_LOCAL/include/numpy"
 
 # Program around a bug in SciPY's distutils.
 unset CFLAGS
 
 python setup.py install ${NUMPY_FCONFIG}
 
-if [ $? -ne 0 ]; then
-    echo "Error building numpy."
-    exit 1
-fi
+# Make a symlink to header files in local/include
+python <<EOF
+import os
+os.chdir(os.path.join(os.environ["SAGE_LOCAL"], "include"))
 
+import numpy
+numpy_includes = os.path.join(numpy.get_include(), "numpy")
+
+os.symlink(os.path.relpath(numpy_includes), "numpy")
+EOF
