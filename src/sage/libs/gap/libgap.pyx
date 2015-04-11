@@ -365,7 +365,6 @@ class Gap(Parent):
                 pass
             x = str(x._gap_init_())
             return make_any_gap_element(self, gap_eval(x))
-        raise ValueError('cannot represent '+str(x)+' as a GAP object')
 
     def _construct_matrix(self, M):
         """
@@ -388,6 +387,16 @@ class Gap(Parent):
             [ [ 1, 0 ], [ 0, 1 ] ]
             sage: libgap(matrix(GF(3),2,2,[4,5,6,7]))
             [ [ Z(3)^0, Z(3) ], [ 0*Z(3), Z(3)^0 ] ]
+
+        TESTS:
+
+        We gracefully handle the case that the conversion fails (:trac:`18039`)::
+
+            sage: F.<a> = GF(9, modulus="first_lexicographic")
+            sage: libgap(Matrix(F, [[a]]))
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: conversion of (Givaro) finite field element to GAP not implemented except for fields defined by Conway polynomials.
         """
         ring = M.base_ring()
         try:

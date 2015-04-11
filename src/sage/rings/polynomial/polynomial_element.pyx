@@ -140,7 +140,7 @@ cpdef is_Polynomial(f):
         sage: is_Polynomial(f)
         False
     """
-    return PY_TYPE_CHECK(f, Polynomial)
+    return isinstance(f, Polynomial)
 
 from polynomial_compiled cimport CompiledPolynomialFunction
 
@@ -223,7 +223,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
           if len(x) == 0:
               return []
           n = max(x.keys())
-          if PY_TYPE_CHECK(n, tuple): # a mpoly dict
+          if isinstance(n, tuple): # a mpoly dict
               n = n[0]
               v = [zero] * (n+1)
               for i, z in x.iteritems():
@@ -659,7 +659,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
             while i >= 0:
                 result = result * a + self[i](other_args)
                 i -= 1
-        elif not a and PY_TYPE_CHECK(a, Element) and a.parent().is_exact(): #without the exactness test we can run into trouble with interval fields.
+        elif not a and isinstance(a, Element) and a.parent().is_exact(): #without the exactness test we can run into trouble with interval fields.
             c = self[0]
             return c + c*a
         elif (d < 4 or d > 50000) and self._compiled is None:
@@ -1275,85 +1275,76 @@ cdef class Polynomial(CommutativeAlgebraElement):
     def is_square(self, root=False):
         """
         Returns whether or not polynomial is square. If the optional
-        argument root is True, then also returns the square root (or None,
-        if the polynomial is not square).
+        argument ``root`` is set to ``True``, then also returns the square root
+        (or ``None``, if the polynomial is not square).
 
         INPUT:
 
-
         -  ``root`` - whether or not to also return a square
-           root (default: False)
-
+           root (default: ``False``)
 
         OUTPUT:
 
-
         -  ``bool`` - whether or not a square
 
-        -  ``object`` - (optional) an actual square root if
-           found, and None otherwise.
-
+        -  ``root`` - (optional) an actual square root if
+           found, and ``None`` otherwise.
 
         EXAMPLES::
 
             sage: R.<x> = PolynomialRing(QQ)
+            sage: (x^2 + 2*x + 1).is_square()
+            True
+            sage: (x^4 + 2*x^3 - x^2 - 2*x + 1).is_square(root=True)
+            (True, x^2 + x - 1)
+
             sage: f = 12*(x+1)^2 * (x+3)^2
-            sage: S.<y> = PolynomialRing(RR)
-            sage: g = 12*(y+1)^2 * (y+3)^2
             sage: f.is_square()
             False
             sage: f.is_square(root=True)
             (False, None)
-            sage: g.is_square()
-            True
+
             sage: h = f/3; h
             4*x^4 + 32*x^3 + 88*x^2 + 96*x + 36
             sage: h.is_square(root=True)
             (True, 2*x^2 + 8*x + 6)
 
+            sage: S.<y> = PolynomialRing(RR)
+            sage: g = 12*(y+1)^2 * (y+3)^2
+
+            sage: g.is_square()
+            True
+
         TESTS:
 
-        Make sure ticket #9093 is fixed::
+        Make sure :trac:`9093` is fixed::
 
             sage: R(1).is_square()
             True
-            sage: R(4/9).is_square()
-            True
+            sage: R(4/9).is_square(root=True)
+            (True, 2/3)
             sage: R(-1/3).is_square()
             False
             sage: R(0).is_square()
             True
         """
-        if self.degree() < 0:
-            if root:
-                return True, self
-            else:
-                return True
-        from sage.rings.arith import gcd
-        R = self.base_ring()
-        P = self.parent()
+        if self.is_zero():
+            return (True, self) if root else True
+
         try:
             f = self.squarefree_decomposition()
         except NotImplementedError:
             f = self.factor()
-        u = R(f.unit())
-        # are all powers in the factorization even?
-        if (gcd([a[1] for a in f])%2 == 0
-            # is the unit a square?
-            and u.is_square()):
-            # build square root
-            g = P(u.sqrt())
+
+        u = self.parent().base_ring()(f.unit())
+
+        if all(a[1] % 2 == 0 for a in f) and u.is_square():
+            g = u.sqrt()
             for a in f:
-                g *= a[0]**(a[1]/2)
-            if root:
-                return True, g
-            else:
-                return True
+                g *= a[0] ** (a[1] / 2)
+            return (True, g) if root else True
         else:
-            if root:
-                return False, None
-            else:
-                return False
+            return (False, None) if root else False
 
     def any_root(self, ring=None, degree=None, assume_squarefree=False):
         """
@@ -6709,17 +6700,27 @@ cdef class Polynomial(CommutativeAlgebraElement):
             R = R.change_ring(f.codomain())
         return R(dict([(k,f(v)) for (k,v) in self.dict().items()]))
 
-    def is_cyclotomic(self):
+    def is_cyclotomic(self, certificate=False):
         r"""
-        Return ``True`` if ``self`` is a cyclotomic polynomial.
+        Return ``True`` if ``self`` is a cyclotomic polynomial. If
+        ``certificate`` is ``True``, the result is ``0`` if ``self`` is not
+        cyclotomic, and ``n`` if ``self`` is the n-th cyclotomic polynomial.
 
         A cyclotomic polynomial is a monic, irreducible polynomial such that
         all roots are roots of unity.
+
+        .. TODO::
+
+            Calling ``poliscyclo()`` from libpari would be much faster. See
+            :trac:`17730`.
 
         ALGORITHM:
 
         The first cyclotomic polynomial ``x-1`` is treated apart,
         otherwise the first algorithm of [BD89]_ is used.
+
+        If ``certificate`` is ``True``, the function ``poliscyclo`` of GP is
+        called.
 
         EXAMPLES:
 
@@ -6732,6 +6733,10 @@ cdef class Polynomial(CommutativeAlgebraElement):
             True
             sage: (x^2 - 1).is_cyclotomic()
             False
+            sage: (x^2 + x + 1).is_cyclotomic(certificate=True)
+            3
+            sage: (x^2 + 2*x + 1).is_cyclotomic(certificate=True)
+            0
 
         Test first 100 cyclotomic polynomials::
 
@@ -6773,8 +6778,8 @@ cdef class Polynomial(CommutativeAlgebraElement):
                 return False
             return f.is_cyclotomic()
 
-        if not self.is_irreducible():
-            return False
+        if certificate:
+            return self._gp_().poliscyclo()
 
         if not self.is_monic():
             return False
@@ -6784,9 +6789,13 @@ cdef class Polynomial(CommutativeAlgebraElement):
         if (self == gen - 1):  # the first cyc. pol. is treated apart
             return True
 
-        coefs = self.coefficients(sparse=False)
-        if coefs[0] != 1:
+        if self.constant_coefficient() != 1:
             return False
+
+        if not self.is_irreducible():
+            return False
+
+        coefs = self.coefficients(sparse=False)
 
         # construct the odd and even part of self
         po_odd = sum(coefs[i]*(gen**((i-1)/2)) for i in xrange(1,len(coefs),2))
@@ -6807,13 +6816,9 @@ cdef class Polynomial(CommutativeAlgebraElement):
             elif selfminus.is_cyclotomic():
                 return True
 
-        # third case, we need to factorise
-        ff1 = f1.factor()
-        if len(ff1) == 1 and ff1[0][1] == 2 and ff1[0][0].is_cyclotomic():
-            return True
-
-        # otherwise not cyclotomic
-        return False
+        # third case, we need to take a square root
+        ans, ff1 = f1.is_square(True)
+        return ans and ff1.is_cyclotomic()
 
     def homogenize(self, var='h'):
         r"""
@@ -6890,7 +6895,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
 
         x, = self.variables()
 
-        if PY_TYPE_CHECK(var, int) or PY_TYPE_CHECK(var, Integer):
+        if isinstance(var, int) or isinstance(var, Integer):
             if var:
                 raise TypeError, "Variable index %d must be < 1."%var
             else:
@@ -7157,7 +7162,7 @@ cdef class Polynomial_generic_dense(Polynomial):
             return
 
         R = parent.base_ring()
-        if PY_TYPE_CHECK(x, list):
+        if isinstance(x, list):
             if check:
                 self.__coeffs = [R(t) for t in x]
                 self.__normalize()
@@ -7171,7 +7176,7 @@ cdef class Polynomial_generic_dense(Polynomial):
             else:
                 x = x.numerator()
 
-        if PY_TYPE_CHECK(x, Polynomial):
+        if isinstance(x, Polynomial):
             if (<Element>x)._parent is self._parent:
                 x = list(x.list())
             elif R.has_coerce_map_from((<Element>x)._parent):# is R or (<Element>x)._parent == R:
@@ -7188,7 +7193,7 @@ cdef class Polynomial_generic_dense(Polynomial):
                     self.__normalize()
                 return
 
-        elif PY_TYPE_CHECK(x, int) and x == 0:
+        elif isinstance(x, int) and x == 0:
             self.__coeffs = []
             return
 
