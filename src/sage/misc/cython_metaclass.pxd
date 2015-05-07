@@ -1,2 +1,5 @@
 cdef extern from "sage/misc/cython_metaclass.h":
-    PyMethodDescr_CallSelf(desc, self)
+    ctypedef object (*PyCFunction)(self, args)
+    ctypedef object (*PyCFunctionWithKeywords)(self, args, kwds)
+    object PyMethodDescr_CallSelf(desc, self)
+    PyCFunctionWithKeywords PyMethodDescr_GetArgsKwdsFunction(desc)

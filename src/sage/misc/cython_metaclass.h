@@ -33,10 +33,26 @@ static CYTHON_INLINE PyObject* PyMethodDescr_CallSelf(PyMethodDescrObject* desc,
     return meth->ml_meth(self, NULL);
 }
 
+static CYTHON_INLINE PyCFunction PyMethodDescr_GetArgsKwdsFunction(PyMethodDescrObject* desc)
+{
+    PyMethodDef* meth = desc->d_method;
+
+    /* This must be a METH_NOARGS method */
+    if (meth == NULL || (meth->ml_flags & METH_ALLARGS) != (METH_VARARGS|METH_KEYWORDS))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                "PyMethodDescr_GetArgsKwdsFunction requires a method with *args and **kwds");
+        return NULL;
+    }
+
+    return meth->ml_meth;
+}
+
 /*
- * This function calls PyType_Ready(t) and then calls t.__typeinit__(t)
- * as if that was a class method. The __typeinit__ method can then be
- * used for example to make changes to the tp_foo slots.
+ * This function calls PyType_Ready(t) and then calls
+ * t.__getmetaclass__(None) (if that method exists) which should
+ * return the metaclass for t. Then type(t) is set to this metaclass
+ * and metaclass.__init__(t, None, None, None) is called.
  */
 static CYTHON_INLINE int Sage_PyType_Ready(PyTypeObject* t)
 {
