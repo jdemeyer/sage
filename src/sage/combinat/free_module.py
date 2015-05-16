@@ -767,8 +767,8 @@ class CombinatorialFreeModuleElement(Element):
 
         INPUT:
 
-        - ``new_base_ring`` -- a ring (default: None)
-        - ``sparse`` -- a boolean (default: False)
+        - ``new_base_ring`` -- a ring (default: ``None``)
+        - ``sparse`` -- a boolean (default: ``False``);
           whether to return a sparse or dense vector
 
         OUTPUT: a :func:`FreeModule` vector
@@ -790,7 +790,7 @@ class CombinatorialFreeModuleElement(Element):
             sage: f._vector_()
             (1, 0, -3)
 
-        By default a dense vector is returned::
+        By default, a dense vector is returned::
 
             sage: _.parent()
             Vector space of dimension 3 over Rational Field

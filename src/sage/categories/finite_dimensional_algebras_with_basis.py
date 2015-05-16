@@ -958,17 +958,17 @@ class FiniteDimensionalAlgebrasWithBasis(CategoryWithAxiom_over_base_ring):
             INPUT:
 
             - ``base_ring`` -- the base ring for the matrix to be constructed
-            - ``action`` -- a bilinear function (default: :func:`operator.mul`)
-            - ``side`` -- 'left' or 'right' (default: 'left')
-            - ``sparse`` -- a boolean (default: False): whether to
+            - ``action`` -- (default: :func:`operator.mul`) a bilinear function
+            - ``side`` -- (default: ``'left'``) ``'left'`` or ``'right'``
+            - ``sparse`` -- a boolean (default: ``False``); whether to
               return a sparse matrix
 
             OUTPUT: a matrix
 
-            If ``side`` is 'left', then the `i`-th column of this
+            If ``side`` is ``'left'``, then the `i`-th column of this
             matrix contains the coefficients of ``action(self, b)``
             where `b` is the `i`-th element of the basis. If ``side``
-            is 'right', then instead the `i`-th row of this matrix
+            is ``'right'``, then instead the `i`-th row of this matrix
             contains the coefficients of ``action(b, self)``.
 
             The order of the rows and columns are ordered according to

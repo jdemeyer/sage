@@ -74,9 +74,9 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             INPUT:
 
             - ``vectors`` -- a list of elements of ``self``
-            - ``sparse`` -- a boolean (default: False):
+            - ``sparse`` -- a boolean (default: ``False``);
               whether to return a sparse matrix
-            - ``column`` -- a boolean (default: False):
+            - ``column`` -- a boolean (default: ``False``);
               whether to build a column matrix instead of a row matrix
 
             EXAMPLES::
@@ -102,7 +102,7 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                 sage: %timeit m = matrix(QQ, [v._vector_(sparse=True) for v in vectors], sparse=True) # not tested
                 1 loops, best of 3: 1.19 s per loop
 
-            When :trac:`18312` will be fixed using this method is
+            When :trac:`18312` will be fixed, using this method is
             likely to still save some constant time factor.
             """
             from sage.matrix.matrix_space import MatrixSpace
@@ -134,7 +134,7 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
 
             - ``action`` -- a function (default: :obj:`operator.mul`)
 
-            - ``side`` -- 'left' or 'right' (default: 'right')
+            - ``side`` -- ``'left'`` or ``'right'`` (default: ``'right'``)
 
             - ``category`` -- a category
 
@@ -146,17 +146,17 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             - The codomain is any vector space, and ``action`` is
               linear on its first argument; typically it is bilinear;
 
-            - If ``side`` is 'left', this is reversed.
+            - If ``side`` is ``'left'``, this is reversed.
 
             OUTPUT:
 
             The subspace of the elements `x` of ``self`` such that
             ``action(x,s) = 0`` for all `s\in S`. If ``side`` is
-            'left' replace the above equation by ``action(s,x) = 0``.
+            ``'left'`` replace the above equation by ``action(s,x) = 0``.
 
             If ``self`` is a ring, ``action`` an action of ``self`` on
             a module `M` and `S` is a subset of `M`, we recover the
-            :Wikipedia:`Annihilator_%28ring_theory%29`. Similarly this
+            :wikipedia:`Annihilator_(ring_theory)`. Similarly this
             can be used to compute torsion or orthogonals.
 
             .. SEEALSO:: :meth:`annihilator_basis` for lots of examples.
@@ -369,12 +369,12 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             - ``base_ring`` -- a ring (default: ``None``, meaning the
               base ring of the codomain)
 
-            - ``side`` -- "left" or "right" (default: "left")
+            - ``side`` -- (default: ``"left"``) ``"left"`` or ``"right"``
 
-            - ``sparse`` -- a boolean (default: False): whether to
+            - ``sparse`` -- a boolean (default: ``False``); whether to
               return a sparse matrix
 
-            If ``side`` is "left", this morphism is considered as
+            If ``side`` is ``"left"``, this morphism is considered as
             acting on the left; i.e. each column of the matrix
             represents the image of an element of the basis of the
             domain.
