@@ -76,7 +76,7 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             - ``vectors`` -- a list of elements of ``self``
             - ``sparse`` -- a boolean (default: ``False``);
               whether to return a sparse matrix
-            - ``column`` -- a boolean (default: ``False``);
+            - ``columns`` -- a boolean (default: ``False``);
               whether to build a column matrix instead of a row matrix
 
             EXAMPLES::
@@ -90,6 +90,27 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                 [0 0 1 0]
                 sage: m.parent()
                 Full MatrixSpace of 3 by 4 sparse matrices over Rational Field
+
+            The same, as a dense matrix::
+
+                sage: m = F.matrix(vectors); m
+                [2 2 3 0]
+                [0 0 0 0]
+                [0 0 1 0]
+                sage: m.parent()
+                Full MatrixSpace of 3 by 4 dense matrices over Rational Field
+
+            Here we build a column matrix instead; at this point this
+            simply transposes the constructed matrix, but the door is
+            open for optimizations in the future::
+
+                sage: m = F.matrix(vectors, columns=True); m
+                [2 0 0]
+                [2 0 0]
+                [3 0 1]
+                [0 0 0]
+                sage: m.parent()
+                Full MatrixSpace of 4 by 3 dense matrices over Rational Field
 
             Constructing a sparse matrix with this method is currently
             really much faster than building it from sparse vectors;
@@ -106,7 +127,6 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
             likely to still save some constant time factor.
             """
             from sage.matrix.matrix_space import MatrixSpace
-            assert not columns
             if not isinstance(vectors, (list, tuple)):
                 vectors = list(vectors)
             if base_ring is None:
@@ -121,8 +141,10 @@ class FiniteDimensionalModulesWithBasis(CategoryWithAxiom_over_base_ring):
                           for j,c in v}
             else:
                 data = [v._vector_() for v in vectors]
-            return M.matrix(data,
-                            coerce=base_ring is not self.base_ring(), copy=False)
+            m = M.matrix(data, coerce=base_ring is not self.base_ring(), copy=False)
+            if columns:
+                m = m.transpose()
+            return m
 
         def annihilator(self, S, action=operator.mul, side='right', category=None):
             r"""
