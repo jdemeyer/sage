@@ -311,11 +311,14 @@ def PolynomialSequence(arg1, arg2=None, immutable=False, cr=False, cr_str=None):
 
     try:
         e = next(iter(gens))
-
-        try:
-            parts = tuple(map(ring, gens)),
-        except TypeError:
+        # fast path for known collection types
+        if isinstance(e, (tuple, list, Sequence_generic, PolynomialSequence_generic)):
             parts = tuple(tuple(ring(f) for f in part) for part in gens)
+        else:
+            try:
+                parts = tuple(map(ring, gens)),
+            except TypeError:
+                parts = tuple(tuple(ring(f) for f in part) for part in gens)
     except StopIteration:
         parts = ((),)
 
@@ -1514,14 +1517,8 @@ class PolynomialSequence_gf2e(PolynomialSequence_generic):
             sage: F = Sequence([x*y + 1, a*x + 1], P)
             sage: F2 = F.weil_restriction()
             sage: F2
-            [x1*y0 + x0*y1 + x1*y1,
-             x0*y0 + x1*y1 + 1,
-             x0 + x1,
-             x1 + 1,
-             x0^2 + x0,
-             x1^2 + x1,
-             y0^2 + y0,
-             y1^2 + y1]
+            [x0*y0 + x1*y1 + 1, x1*y0 + x0*y1 + x1*y1, x1 + 1, x0 + x1, x0^2 + x0,
+            x1^2 + x1, y0^2 + y0, y1^2 + y1]
 
         Another bigger example for a small scale AES::
 

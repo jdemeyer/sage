@@ -33,6 +33,8 @@ include "sage/ext/stdsage.pxi"
 include "sage/ext/interrupt.pxi"
 include "sage/libs/ntl/decl.pxi"
 
+from sage.misc.long cimport pyobject_to_long
+
 from sage.rings.polynomial.polynomial_element cimport Polynomial
 from sage.structure.element cimport ModuleElement, RingElement
 from sage.structure.element import coerce_binop
@@ -108,7 +110,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
         cdef Polynomial_integer_dense_flint x = Polynomial_integer_dense_flint.__new__(Polynomial_integer_dense_flint)
         x._parent = P
         x._is_gen = 0
-        if not PY_TYPE_CHECK(a, Integer):
+        if not isinstance(a, Integer):
             a = ZZ(a)
         fmpz_poly_set_coeff_mpz(x.__poly, 0, (<Integer>a).value)
         return x
@@ -224,7 +226,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
                     fmpz_poly_set_coeff_si(self.__poly, i, a)
                     sig_off()
                 else:
-                    if not PY_TYPE_CHECK(a, Integer):
+                    if not isinstance(a, Integer):
                         a = ZZ(a)
                     sig_on()
                     fmpz_poly_set_coeff_mpz(self.__poly, i, (<Integer>a).value)
@@ -262,7 +264,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
                 fmpz_poly_set_coeff_si(self.__poly, i, a)
                 sig_off()
             else:
-                if not PY_TYPE_CHECK(a, Integer):
+                if not isinstance(a, Integer):
                     a = ZZ(a)
                 sig_on()
                 fmpz_poly_set_coeff_mpz(self.__poly, i, (<Integer>a).value)
@@ -861,7 +863,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
         sig_off()
         return x
 
-    def __pow__(Polynomial_integer_dense_flint self, int exp, ignored):
+    def __pow__(Polynomial_integer_dense_flint self, exp, ignored):
         """
 
         EXAMPLES::
@@ -889,15 +891,28 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
             Traceback (most recent call last):
             ...
             ZeroDivisionError: negative exponent in power of zero
+
+        Check that :trac:`18278` is fixed::
+
+            sage: R.<x> = ZZ[]
+            sage: x^(1/2)
+            Traceback (most recent call last):
+            ...
+            TypeError: rational is not an integer
+            sage: x^(2^100)
+            Traceback (most recent call last):
+            ...
+            OverflowError: Sage Integer too large to convert to C long
         """
-        cdef long nn = exp
         cdef Polynomial_integer_dense_flint res = self._new()
+        cdef long nn = pyobject_to_long(exp)
+
         if self.is_zero():
             if exp == 0:
                 fmpz_poly_set_coeff_si(res.__poly, 0, 1)
                 return res
             elif exp < 0:
-                raise ZeroDivisionError, "negative exponent in power of zero"
+                raise ZeroDivisionError("negative exponent in power of zero")
             else:
                 return res
         if exp < 0:
@@ -908,7 +923,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
         else:
             if self is self._parent.gen():
                 sig_on()
-                fmpz_poly_set_coeff_ui(res.__poly, exp, 1)
+                fmpz_poly_set_coeff_ui(res.__poly, nn, 1)
                 sig_off()
             else:
                 sig_on()
@@ -948,7 +963,7 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
         cdef long t
         if right == 0:
             raise ZeroDivisionError, "division by zero"
-        if not PY_TYPE_CHECK(right, Polynomial_integer_dense_flint):
+        if not isinstance(right, Polynomial_integer_dense_flint):
             if right in ZZ:
                 sig_on()
                 fmpz_poly_scalar_fdiv_mpz(res.__poly, self.__poly,
@@ -985,11 +1000,11 @@ cdef class Polynomial_integer_dense_flint(Polynomial):
         """
         if n < 0:
             raise IndexError, "n must be >= 0"
-        if PY_TYPE_CHECK(value, int):
+        if isinstance(value, int):
             sig_on()
             fmpz_poly_set_coeff_si(self.__poly, n, value)
             sig_off()
-        elif PY_TYPE_CHECK(value, Integer):
+        elif isinstance(value, Integer):
             sig_on()
             fmpz_poly_set_coeff_mpz(self.__poly, n, (<Integer>value).value)
             sig_off()

@@ -648,7 +648,7 @@ cdef class ClonableArray(ClonableElement):
             sage: type(IncreasingArrays()([1,2,3])[:])
             <type 'list'>
         """
-        if PY_TYPE_CHECK(key, slice):
+        if isinstance(key, slice):
             self._list[key.start:key.stop:key.step]
         return self._list[key]
 
@@ -837,7 +837,7 @@ cdef class ClonableArray(ClonableElement):
         return (<Element>left)._richcmp(right, op)
 
     # See protocol in comment in sage/structure/element.pyx
-    cdef int _cmp_c_impl(left, Element right) except -2:
+    cpdef int _cmp_(left, Element right) except -2:
         """
         TEST::
 
@@ -1434,7 +1434,7 @@ cdef class ClonableIntArray(ClonableElement):
         cdef list res
         cdef slice keysl
         # print key
-        if PY_TYPE_CHECK(key, slice):
+        if isinstance(key, slice):
             keysl = <slice> key
             start, stop, step = keysl.indices(self._len)
             res = []
@@ -1593,7 +1593,7 @@ cdef class ClonableIntArray(ClonableElement):
         return (<Element>left)._richcmp(right, op)
 
     # See protocol in comment in sage/structure/element.pyx
-    cdef int _cmp_c_impl(left, Element right) except -2:
+    cpdef int _cmp_(left, Element right) except -2:
         """
         TEST::
 

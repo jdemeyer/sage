@@ -2,6 +2,7 @@
 Univariate Polynomials over GF(p^e) via NTL's ZZ_pEX.
 
 AUTHOR:
+
 - Yann Laigle-Chapuy (2010-01) initial implementation
 """
 
@@ -131,7 +132,7 @@ cdef class Polynomial_ZZ_pEX(Polynomial_template):
         if isinstance(x, Polynomial):
             x = x.list()
 
-        if PY_TYPE_CHECK(x, list) or PY_TYPE_CHECK(x, tuple):
+        if isinstance(x, list) or isinstance(x, tuple):
             Polynomial.__init__(self, parent, is_gen=is_gen)
             (<Polynomial_template>self)._cparent = get_cparent(parent)
             celement_construct(&self.x, (<Polynomial_template>self)._cparent)
@@ -384,7 +385,7 @@ cdef class Polynomial_ZZ_pEX(Polynomial_template):
             raise ValueError("unknown algorithm")
         return res != 0
 
-    cdef int _cmp_c_impl(left,Element right) except -2:
+    cpdef int _cmp_(left,Element right) except -2:
         """
         EXAMPLE::
 
