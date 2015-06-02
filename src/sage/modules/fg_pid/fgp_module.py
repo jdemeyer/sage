@@ -463,6 +463,8 @@ class FGP_Module_class(Module):
         if not other.is_submodule(self):
             raise ValueError("other must be a submodule of self")
         return self._module_constructor(self._V, other._V+self._W)
+    # for Python 2 without from __future__ import division
+    __div__ = __truediv__
 
     def __eq__(self, other):
         """

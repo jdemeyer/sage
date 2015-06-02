@@ -1514,6 +1514,8 @@ class QuiverRep_generic(WithEqualityById, Module):
             True
         """
         return self.quotient(sub)
+    # for Python 2 without from __future__ import division
+    __div__ = __truediv__
 
     def _submodule(self, spaces={}):
         """

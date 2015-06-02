@@ -704,6 +704,8 @@ class Rings(CategoryWithAxiom):
                 TypeError: Use self.quo(I) or self.quotient(I) to construct the quotient ring.
             """
             raise TypeError("Use self.quo(I) or self.quotient(I) to construct the quotient ring.")
+        # for Python 2 without from __future__ import division
+        __div__ = __truediv__
 
         def __getitem__(self, arg):
             """

@@ -394,6 +394,8 @@ class Scheme(Parent):
             Affine Space of dimension 3 over Finite Field of size 7
         """
         return self.base_extend(Y)
+    # for Python 2 without from __future__ import division
+    __div__ = __truediv__
 
     def base_ring(self):
         """

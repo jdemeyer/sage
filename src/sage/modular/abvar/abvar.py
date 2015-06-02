@@ -1036,6 +1036,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             return self._quotient_by_abelian_subvariety(other)
         else:
             raise TypeError("other must be a subgroup or abelian subvariety")
+    # for Python 2 without from __future__ import division
+    __div__ = __truediv__
 
     def degeneracy_map(self, M_ls, t_ls):
         """
