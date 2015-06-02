@@ -708,7 +708,7 @@ class CombinatorialFreeModuleElement(Element):
     _lmul_ = _acted_upon_
     _rmul_ = _acted_upon_
 
-    def __div__(self, x, self_on_left=False ):
+    def __truediv__(self, x, self_on_left=False ):
         """
         Division by coefficients.
 
