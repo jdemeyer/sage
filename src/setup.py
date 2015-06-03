@@ -11,7 +11,7 @@ from distutils.core import setup
 ### the same directory as this file
 #########################################################
 
-from module_list import ext_modules, aliases
+from module_list import ext_modules, library_order, aliases
 from sage.env import *
 
 #########################################################
@@ -36,7 +36,6 @@ SAGE_INC = os.path.join(SAGE_LOCAL, 'include')
 import numpy
 include_dirs = [SAGE_INC,
                 SAGE_SRC,
-                os.path.join(SAGE_SRC, 'c_lib', 'include'),
                 os.path.join(SAGE_SRC, 'sage', 'ext'),
                 os.path.join(numpy.get_include())]
 
@@ -155,12 +154,6 @@ for m in ext_modules:
     for lib in lib_headers:
         if lib in m.libraries:
             m.depends += lib_headers[lib]
-
-    # Add csage as first library for all Cython extensions.
-    # The order is important, in particular for Cygwin.
-    m.libraries = ['csage'] + m.libraries
-    if m.language == 'c++':
-        m.libraries.append('stdc++')
 
     m.extra_compile_args = m.extra_compile_args + extra_compile_args
     m.extra_link_args = m.extra_link_args + extra_link_args
@@ -433,6 +426,15 @@ class sage_build_ext(build_ext):
             log.info("building '%s' extension", ext.name)
             need_to_compile = True
 
+        # If we need to compile, adjust the given extension
+        if need_to_compile:
+            libs = ext.libraries
+            if ext.language == 'c++' and 'stdc++' not in libs:
+                libs = libs + ['stdc++']
+
+            # Sort libraries according to library_order
+            ext.libraries = sorted(libs, key=lambda x: library_order.get(x, 0))
+
         return need_to_compile, (sources, ext, ext_filename)
 
     def build_extension(self, p):
@@ -548,10 +550,10 @@ def run_cythonize():
     version_file = os.path.join(os.path.dirname(__file__), '.cython_version')
     version_stamp = '\n'.join([
         'cython version: ' + str(Cython.__version__),
-        'embedsignature: True'
+        'embedsignature: True',
         'debug: ' + str(debug),
         'profile: ' + str(profile),
-    ])
+    ""])
     if os.path.exists(version_file) and open(version_file).read() == version_stamp:
         force = False
 
