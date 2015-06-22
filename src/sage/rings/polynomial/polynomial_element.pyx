@@ -1835,7 +1835,7 @@ cdef class Polynomial(CommutativeAlgebraElement):
             return self.roots(ring=ring, multiplicities=False)[0]
 
 
-    def __div__(self, right):
+    def __truediv__(self, right):
         """
         EXAMPLES::
 
@@ -1910,6 +1910,8 @@ cdef class Polynomial(CommutativeAlgebraElement):
             pass
         return RingElement.__div__(self, right)
 
+    def __div__(self, other):
+        return Polynomial.__truediv__(self, other)
 
     def __pow__(self, right, modulus):
         """

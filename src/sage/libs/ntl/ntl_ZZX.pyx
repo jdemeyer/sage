@@ -315,7 +315,7 @@ cdef class ntl_ZZX(object):
         sig_off()
         return r
 
-    def __div__(ntl_ZZX self, ntl_ZZX other):
+    def __truediv__(ntl_ZZX self, ntl_ZZX other):
         """
         Compute quotient self / other, if the quotient is a polynomial.
         Otherwise an Exception is raised.
@@ -344,6 +344,9 @@ cdef class ntl_ZZX(object):
             raise ArithmeticError("self (=%s) is not divisible by other (=%s)"%(self, other))
         result = make_ZZX_sig_off(q)
         return result
+
+    def __div__(self, other):
+        return PyNumber_TrueDivide(self, other)
 
     def __mod__(ntl_ZZX self, ntl_ZZX other):
         """
