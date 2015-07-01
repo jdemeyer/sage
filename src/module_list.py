@@ -168,15 +168,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.calculus.var',
-              sources = ['sage/calculus/var.pyx']),
-
-    Extension('sage.calculus.riemann',
-              sources = ['sage/calculus/riemann.pyx']),
-
-    Extension('sage.calculus.interpolators',
-              sources = ['sage/calculus/interpolators.pyx']),
-
+    Extension('*', ['sage/calculus/*.pyx']),
 
     ################################
     ##
@@ -266,9 +258,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.crypto.boolean_function',
-              sources = ['sage/crypto/boolean_function.pyx']),
-
+    Extension('*', ['sage/crypto/*.pyx']),
 
     ################################
     ##
@@ -276,11 +266,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.data_structures.bounded_integer_sequences',
-              sources = ['sage/data_structures/bounded_integer_sequences.pyx']),
-
-    Extension('sage.data_structures.bitset',
-              sources = ['sage/data_structures/bitset.pyx']),
+    Extension('*', ['sage/data_structures/*.pyx']),
 
     ################################
     ##
@@ -296,18 +282,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.finance.fractal',
-              sources = ['sage/finance/fractal.pyx']),
-
-    Extension('sage.finance.markov_multifractal_cython',
-              sources = ['sage/finance/markov_multifractal_cython.pyx']),
-
-    Extension('sage.finance.option',
-              sources = ['sage/finance/option.pyx']),
-
-    Extension('sage.finance.time_series',
-              sources = ['sage/finance/time_series.pyx']),
-
+    Extension('*', ['sage/finance/*.pyx']),
 
     ################################
     ##
@@ -325,8 +300,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.games.sudoku_backtrack',
-              sources = ['sage/games/sudoku_backtrack.pyx']),
+    Extension('*', ['sage/games/*.pyx']),
 
     ################################
     ##
@@ -455,12 +429,6 @@ ext_modules = [
     Extension('sage.graphs.hyperbolicity',
               sources = ['sage/graphs/hyperbolicity.pyx']),
 
-    ################################
-    ##
-    ## sage.graphs.base
-    ##
-    ################################
-
     Extension('sage.graphs.base.c_graph',
               sources = ['sage/graphs/base/c_graph.pyx']),
 
@@ -480,26 +448,19 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.groups.group',
-              sources = ['sage/groups/group.pyx']),
-
-    Extension('sage.groups.old',
-              sources = ['sage/groups/old.pyx']),
-
-    Extension('sage.groups.libgap_wrapper',
-              sources = ['sage/groups/libgap_wrapper.pyx']),
-
-    Extension('sage.groups.perm_gps.permgroup_element',
-              sources = ['sage/groups/perm_gps/permgroup_element.pyx']),
+    Extension('*', ['sage/groups/*.pyx']),
 
     Extension('sage.groups.semimonomial_transformations.semimonomial_transformation',
               sources = ['sage/groups/semimonomial_transformations/semimonomial_transformation.pyx']),
 
     ###################################
     ##
-    ## sage.groups.perm_gps.partn_ref
+    ## sage.groups.perm_gps
     ##
     ###################################
+
+    Extension('sage.groups.perm_gps.permgroup_element',
+              sources = ['sage/groups/perm_gps/permgroup_element.pyx']),
 
     Extension('sage.groups.perm_gps.partn_ref.automorphism_group_canonical_label',
               sources = ['sage/groups/perm_gps/partn_ref/automorphism_group_canonical_label.pyx'],
@@ -546,12 +507,6 @@ ext_modules = [
               libraries = ['flint'],
               extra_compile_args = ['-std=c99']),
 
-    ###################################
-    ##
-    ## sage.groups.perm_gps.partn_ref2
-    ##
-    ###################################
-
     Extension('sage.groups.perm_gps.partn_ref2.refinement_generic',
               sources = ['sage/groups/perm_gps/partn_ref2/refinement_generic.pyx'],
               libraries = ["flint", "gmp", "gmpxx", "stdc++"],
@@ -572,9 +527,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.interacts.library_cython',
-              sources = ['sage/interacts/library_cython.pyx'],
-              libraries = []),
+    Extension('*', ['sage/interacts/*.pyx']),
 
     ################################
     ##
@@ -582,8 +535,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.interfaces.sagespawn',
-              sources = ['sage/interfaces/sagespawn.pyx']),
+    Extension('*', ['sage/interfaces/*.pyx']),
 
     ################################
     ##
@@ -1061,32 +1013,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.matroids.matroid',
-            ['sage/matroids/matroid.pyx']),
-
-    Extension('sage.matroids.extension',
-            ['sage/matroids/extension.pyx']),
-
-    Extension('sage.matroids.set_system',
-            ['sage/matroids/set_system.pyx']),
-
-    Extension('sage.matroids.lean_matrix',
-            ['sage/matroids/lean_matrix.pyx']),
-
-    Extension('sage.matroids.basis_exchange_matroid',
-            ['sage/matroids/basis_exchange_matroid.pyx']),
-
-    Extension('sage.matroids.basis_matroid',
-            ['sage/matroids/basis_matroid.pyx']),
-
-    Extension('sage.matroids.linear_matroid',
-            ['sage/matroids/linear_matroid.pyx']),
-
-    Extension('sage.matroids.circuit_closures_matroid',
-            ['sage/matroids/circuit_closures_matroid.pyx']),
-
-    Extension('sage.matroids.unpickling',
-            ['sage/matroids/unpickling.pyx']),
+    Extension('*', ['sage/matroids/*.pyx']),
 
     ################################
     ##
@@ -1094,8 +1021,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.media.channels',
-              sources = ['sage/media/channels.pyx']),
+    Extension('*', ['sage/media/*.pyx']),
 
     ################################
     ##
@@ -1298,15 +1224,7 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.quadratic_forms.count_local_2',
-              sources = ['sage/quadratic_forms/count_local_2.pyx']),
-
-    Extension('sage.quadratic_forms.quadratic_form__evaluate',
-              sources = ['sage/quadratic_forms/quadratic_form__evaluate.pyx']),
-
-
-    Extension('sage.quadratic_forms.ternary',
-              sources = ['sage/quadratic_forms/ternary.pyx']),
+    Extension('*', ['sage/quadratic_forms/*.pyx']),
 
     ###############################
     ##
@@ -1314,8 +1232,7 @@ ext_modules = [
     ##
     ###############################
 
-    Extension('sage.quivers.paths',
-              sources = ['sage/quivers/paths.pyx']),
+    Extension('*', ['sage/quivers/*.pyx']),
 
     ################################
     ##
@@ -1727,6 +1644,29 @@ ext_modules = [
 
     ################################
     ##
+    ## sage.sat
+    ##
+    ################################
+
+    OptionalExtension("sage.sat.solvers.cryptominisat.cryptominisat",
+              sources = ["sage/sat/solvers/cryptominisat/cryptominisat.pyx"],
+              include_dirs = [os.path.join(SAGE_INC, "cmsat")],
+              language = "c++",
+              libraries = ['cryptominisat', 'z'],
+              package = 'cryptominisat'),
+
+    OptionalExtension("sage.sat.solvers.cryptominisat.solverconf",
+              sources = ["sage/sat/solvers/cryptominisat/solverconf.pyx", "sage/sat/solvers/cryptominisat/solverconf_helper.cpp"],
+              include_dirs = [os.path.join(SAGE_INC, "cmsat")],
+              language = "c++",
+              libraries = ['cryptominisat', 'z'],
+              package = 'cryptominisat'),
+
+    Extension('sage.sat.solvers.satsolver',
+              sources = ['sage/sat/solvers/satsolver.pyx']),
+
+    ################################
+    ##
     ## sage.schemes
     ##
     ################################
@@ -1753,6 +1693,9 @@ ext_modules = [
               language = 'c++',
               include_dirs = ['sage/libs/ntl/',
                               'sage/schemes/hyperelliptic_curves/hypellfrob/']),
+
+    Extension('sage.schemes.projective.projective_morphism_helper',
+              sources = ['sage/schemes/projective/projective_morphism_helper.pyx']),
 
     Extension('sage.schemes.toric.divisor_class',
               sources = ['sage/schemes/toric/divisor_class.pyx']),
@@ -1821,12 +1764,6 @@ ext_modules = [
     ##
     ################################
 
-    Extension('sage.symbolic.function',
-              sources = ['sage/symbolic/function.pyx']),
-
-    Extension('sage.symbolic.ring',
-              sources = ['sage/symbolic/ring.pyx']),
-
     Extension('*', ['sage/symbolic/*.pyx']),
 
     ################################
@@ -1841,38 +1778,6 @@ ext_modules = [
 
     Extension('sage.tests.cython',
               sources = ['sage/tests/cython.pyx']),
-
-    ################################
-    ##
-    ## sage.sat
-    ##
-    ################################
-
-    OptionalExtension("sage.sat.solvers.cryptominisat.cryptominisat",
-              ["sage/sat/solvers/cryptominisat/cryptominisat.pyx"],
-              include_dirs = [SAGE_INC, SAGE_INC+"/cmsat"],
-              language = "c++",
-              libraries = ['cryptominisat', 'z'],
-              package = 'cryptominisat'),
-
-    OptionalExtension("sage.sat.solvers.cryptominisat.solverconf",
-              ["sage/sat/solvers/cryptominisat/solverconf.pyx", "sage/sat/solvers/cryptominisat/solverconf_helper.cpp"],
-              include_dirs = [SAGE_INC, SAGE_INC+"/cmsat"],
-              language = "c++",
-              libraries = ['cryptominisat', 'z'],
-              package = 'cryptominisat'),
-
-    Extension('sage.sat.solvers.satsolver',
-              sources = ['sage/sat/solvers/satsolver.pyx']),
-
-    ################################
-    ##
-    ## sage.schemes
-    ##
-    ################################
-
-    Extension('sage.schemes.projective.projective_morphism_helper',
-              sources = ['sage/schemes/projective/projective_morphism_helper.pyx']),
 ]
 
 # Add auto-generated modules
