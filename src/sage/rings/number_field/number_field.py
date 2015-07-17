@@ -200,6 +200,7 @@ import sage.rings.polynomial.polynomial_element as polynomial_element
 import sage.rings.complex_field
 import sage.groups.abelian_gps.abelian_group
 import sage.rings.complex_interval_field
+from sage.rings.integer import Integer
 
 from sage.structure.parent_gens import ParentWithGens
 from sage.structure.factory import UniqueFactory
@@ -5875,13 +5876,13 @@ class NumberField_generic(number_field_base.NumberField):
             sage: K.zeta(2, all=True)
             [-1]
             sage: K.zeta(3)
-            1/2*z - 1/2
+            -1/2*z - 1/2
             sage: K.zeta(3, all=True)
-            [1/2*z - 1/2, -1/2*z - 1/2]
+            [-1/2*z - 1/2, 1/2*z - 1/2]
             sage: K.zeta(4)
             Traceback (most recent call last):
             ...
-            ValueError: There are no 4th roots of unity in self.
+            ValueError: there are no 4th roots of unity in Number Field in z with defining polynomial x^2 + 3
 
         ::
 
@@ -5894,7 +5895,7 @@ class NumberField_generic(number_field_base.NumberField):
             sage: K.zeta(3)
             Traceback (most recent call last):
             ...
-            ValueError: There are no 3rd roots of unity in self.
+            ValueError: there are no 3rd roots of unity in Number Field in b with defining polynomial x^2 + 1
             sage: K.zeta(3,all=True)
             []
         """
@@ -5908,7 +5909,7 @@ class NumberField_generic(number_field_base.NumberField):
             pass
 
         K = self
-        n = ZZ(n)
+        n = Integer(n)
         if n <= 0:
             raise ValueError("n (=%s) must be positive"%n)
         if n == 1:
@@ -5922,18 +5923,18 @@ class NumberField_generic(number_field_base.NumberField):
             else:
                 return K(-1)
 
-        # First check if the degree of K is compatible with an
-        # inclusion QQ(\zeta_n) -> K.
-        if sage.rings.arith.euler_phi(n).divides(K.absolute_degree()):
-            # Factor the n-th cyclotomic polynomial over K.
-            f = K.absolute_polynomial().change_variable_name('y')
-            factors = pari.polcyclo(n).factornf(f).component(1)
-            roots = [K(-g.polcoeff(0)) for g in factors if g.poldegree() == 1]
+        zeta_order, zeta_gen = K.pari_nf().nfrootsof1()
+        zeta_order = Integer(zeta_order)
+        if not n.divides(zeta_order):
             if all:
-                return roots
-            if roots:
-                return roots[0]
-        raise ValueError("There are no %s roots of unity in self." % n.ordinal_str())
+                return []
+            raise ValueError("there are no %s roots of unity in %s" % (n.ordinal_str(), K))
+
+        gen = K(zeta_gen) ** (zeta_order//n)
+        if all:
+            return [gen ** i for i in n.coprime_integers(n)]
+        else:
+            return gen
 
     def zeta_order(self):
         r"""
@@ -5962,7 +5963,7 @@ class NumberField_generic(number_field_base.NumberField):
         except AttributeError:
             pass
 
-        return ZZ(self.pari_nf().nfrootsof1()[0])
+        return Integer(self.pari_nf().nfrootsof1()[0])
 
     number_of_roots_of_unity = zeta_order
 

@@ -1439,7 +1439,7 @@ class DirichletCharacter(MultiplicativeGroupElement):
             sage: K.<a,b>=NumberField([x^2 + 1, x^2 - 3])
             sage: chi = DirichletGroup(7, K).0
             sage: chi.minimize_base_ring()
-            Dirichlet character modulo 7 of conductor 7 mapping 3 |--> -1/2*b*a + 1/2
+            Dirichlet character modulo 7 of conductor 7 mapping 3 |--> 1/2*b*a + 1/2
         """
         R = self.base_ring()
         if R.is_prime_field():
