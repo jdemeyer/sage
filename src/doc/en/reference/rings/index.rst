@@ -37,7 +37,6 @@ General Rings, Ideals, and Morphisms
    sage/rings/dedekind_domain_element
    sage/rings/euclidean_domain
    sage/rings/euclidean_domain_element
-   sage/rings/field
    sage/rings/field_element
    sage/rings/integral_domain
    sage/rings/integral_domain_element
