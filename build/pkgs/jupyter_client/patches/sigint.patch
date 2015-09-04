@@ -1,0 +1,66 @@
+From fd1f31b6ebef66155534281da8c5a2ec1015bfd5 Mon Sep 17 00:00:00 2001
+From: Jeroen Demeyer <jdemeyer@cage.ugent.be>
+Date: Fri, 4 Sep 2015 16:12:55 +0200
+Subject: [PATCH 1/2] Launch the kernel in a separate process group
+
+---
+ jupyter_client/launcher.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/jupyter_client/launcher.py b/jupyter_client/launcher.py
+index 0a7a3f1..c0dda3f 100644
+--- a/jupyter_client/launcher.py
++++ b/jupyter_client/launcher.py
+@@ -114,6 +114,10 @@ def launch_kernel(cmd, stdin=None, stdout=None, stderr=None, env=None,
+         if independent:
+             kwargs['preexec_fn'] = lambda: os.setsid()
+         else:
++            # Create a new process group. This makes it easier to
++            # interrupt the kernel, because we want to interrupt the
++            # children of the kernel process also.
++            kwargs['preexec_fn'] = lambda: os.setpgrp()
+             env['JPY_PARENT_PID'] = str(os.getpid())
+ 
+         proc = Popen(cmd, **kwargs)
+
+From da68eab682d3763d333bb852ed842e442dbcf05c Mon Sep 17 00:00:00 2001
+From: Jeroen Demeyer <jdemeyer@cage.ugent.be>
+Date: Fri, 4 Sep 2015 16:22:37 +0200
+Subject: [PATCH 2/2] Interrupt the whole process group
+
+---
+ jupyter_client/manager.py | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/jupyter_client/manager.py b/jupyter_client/manager.py
+index 1f9e498..f7db577 100644
+--- a/jupyter_client/manager.py
++++ b/jupyter_client/manager.py
+@@ -385,18 +385,24 @@ def interrupt_kernel(self):
+                 from .win_interrupt import send_interrupt
+                 send_interrupt(self.kernel.win32_interrupt_event)
+             else:
+-                self.kernel.send_signal(signal.SIGINT)
++                self.signal_kernel(signal.SIGINT)
+         else:
+             raise RuntimeError("Cannot interrupt kernel. No kernel is running!")
+ 
+     def signal_kernel(self, signum):
+-        """Sends a signal to the kernel.
++        """Sends a signal to the process group of the kernel (this
++        usually includes the kernel and any subprocesses spawned by
++        the kernel).
+ 
+         Note that since only SIGTERM is supported on Windows, this function is
+         only useful on Unix systems.
+         """
+         if self.has_kernel:
+-            self.kernel.send_signal(signum)
++            try:
++                pgid = os.getpgid(self.kernel.pid)
++                os.killpg(pgid, signal.SIGINT)
++            except OSError:
++                self.kernel.send_signal(signum)
+         else:
+             raise RuntimeError("Cannot signal kernel. No kernel is running!")
+ 
