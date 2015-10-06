@@ -6358,7 +6358,7 @@ class ANRoot(ANDescr):
         self._multiplicity = multiplicity
         self._complex = is_ComplexIntervalFieldElement(interval)
         self._complex_poly = poly.is_complex()
-        self._interval = self.refine_interval(interval, 64)
+        self._interval = interval
         self._is_pow = is_pow
 
     def __reduce__(self):
@@ -6513,12 +6513,7 @@ class ANRoot(ANDescr):
         of the `k-1`-st derivative); and a precision, in bits.
 
         Tries to find a narrow interval enclosing the root using
-        interval arithmetic of the given precision. (No particular
-        number of resulting bits of precision is guaranteed.)
-
-        Uses a combination of Newton's method (adapted for interval
-        arithmetic) and bisection. The algorithm will converge very
-        quickly if started with a sufficiently narrow interval.
+        interval arithmetic of the given precision.
 
         EXAMPLES::
 
@@ -6527,368 +6522,28 @@ class ANRoot(ANDescr):
             sage: rt2 = ANRoot(x^2 - 2, RIF(0, 2))
             sage: rt2.refine_interval(RIF(0, 2), 75)
             1.4142135623730950488017?
-        """
-        if self._complex or self._complex_poly:
-            v = self._complex_refine_interval(interval, prec)
-            if self._complex:
-                return v
-            else:
-                return v.real()
-        else:
-            return self._real_refine_interval(interval, prec)
 
-    def _real_refine_interval(self, interval, prec):
-        r"""
-        Does the calculation for ``refine_interval``.
+        ::
 
-        EXAMPLES::
-
-            sage: from sage.rings.qqbar import ANRoot
-            sage: x = polygen(AA)
-            sage: rt2 = ANRoot(x^2 - 2, RIF(0, 2))
-            sage: rt2.refine_interval(RIF(0, 2), 75) # indirect doctest
-            1.4142135623730950488017?
-        """
-        # Don't throw away bits in the original interval; doing so might
-        # invalidate it (include an extra root)
-
-        field = RealIntervalField(max(prec, interval.prec()))
-        interval = field(interval)
-        if interval.is_exact():
-            return interval
-
-        p = self._poly.poly()
-        dp = p.derivative()
-        for i in xrange(0, self._multiplicity - 1):
-            p = dp
-            dp = p.derivative()
-
-        zero = field(0)
-
-        poly_ring = field['x']
-
-        # interval_p = poly_ring(p)
-        coeffs = [c._interval_fast(prec) for c in p.list()]
-        interval_p = poly_ring(coeffs)
-
-        # This special case is important: this is the only way we could
-        # refine "infinitely deep" (we could get an interval of diameter
-        # about 2^{-2^31}, and then hit floating-point underflow); avoiding
-        # this case here means we do not have to worry about iterating too
-        # many times later
-        if coeffs[0].is_zero() and interval.contains_zero():
-            return zero
-
-        # interval_dp = poly_ring(dp)
-        dcoeffs = [c.interval_fast(field) for c in dp.list()]
-        interval_dp = poly_ring(dcoeffs)
-
-        linfo = {}
-        uinfo = {}
-
-        def update_info(info, x):
-            info['endpoint'] = x
-            val = interval_p(field(x))
-            info['value'] = val
-            # sign == 1 if val is bounded greater than 0
-            # sign == -1 if val is bounded less than 0
-            # sign == 0 if val might be 0
-            if val > zero:
-                info['sign'] = 1
-            elif val < zero:
-                info['sign'] = -1
-            else:
-                info['sign'] = 0
-
-        update_info(linfo, interval.lower())
-        update_info(uinfo, interval.upper())
-
-        newton_lower = True
-
-        while True:
-            if linfo['sign'] == 0 and uinfo['sign'] == 0:
-                # We take it on faith that there is a root in interval,
-                # even though we can't prove it at the current precision.
-                # We can't do any more refining...
-                return interval
-
-            if linfo['sign'] == uinfo['sign']:
-                # Oops...
-                # print self._poly.poly()
-                # print interval_p
-                # print linfo['endpoint'], linfo['value'], linfo['sign']
-                # print uinfo['endpoint'], uinfo['value'], uinfo['sign']
-                raise ValueError("Refining interval that does not bound unique root!")
-
-            # Use a simple algorithm:
-            # Try an interval Newton-Raphson step. If this does not add at
-            # least one bit of information, or if it fails (because the
-            # slope is not bounded away from zero), then try bisection.
-            # If this fails because the value at the midpoint is not
-            # bounded away from zero, then also try the 1/4 and 3/4 points.
-            # If all of these fail, then return the current interval.
-
-            slope = interval_dp(interval)
-
-            newton_success = False
-            diam = interval.diameter()
-
-            if not (zero in slope):
-                # OK, we try Newton-Raphson.
-                # I have no idea if it helps, but each time through the loop,
-                # we either do Newton-Raphson from the left endpoint or
-                # the right endpoint, alternating.
-
-                newton_lower = not newton_lower
-                if newton_lower:
-                    new_range = linfo['endpoint'] - linfo['value'] / slope
-                else:
-                    new_range = uinfo['endpoint'] - uinfo['value'] / slope
-
-                if new_range.lower() in interval:
-                    interval = field(new_range.lower(), interval.upper())
-                    update_info(linfo, interval.lower())
-                if new_range.upper() in interval:
-                    interval = field(interval.lower(), new_range.upper())
-                    update_info(uinfo, interval.upper())
-
-                new_diam = interval.diameter()
-
-                if new_diam == 0:
-                    # Wow, we managed to find the answer exactly.
-                    # (I think this can only happen with a linear polynomial,
-                    # in which case we shouldn't have been in this
-                    # function at all; but oh well.)
-                    return interval
-
-                if (new_diam << 1) <= diam:
-                    # We got at least one bit.
-                    newton_success = True
-
-            if not newton_success:
-                center = interval.center()
-
-                def try_bisection(mid):
-                    minfo = {}
-                    update_info(minfo, mid)
-                    if minfo['sign'] == 0:
-                        return interval, False
-                    # We check to make sure the new interval is actually
-                    # narrower; this might not be true if the interval
-                    # is less than 4 ulp's wide
-                    if minfo['sign'] == linfo['sign'] and mid > interval.lower():
-                        linfo['endpoint'] = minfo['endpoint']
-                        linfo['value'] = minfo['value']
-                        linfo['sign'] = minfo['sign']
-                        return field(mid, interval.upper()), True
-                    if minfo['sign'] == uinfo['sign'] and mid < interval.upper():
-                        uinfo['endpoint'] = minfo['endpoint']
-                        uinfo['value'] = minfo['value']
-                        uinfo['sign'] = minfo['sign']
-                        return field(interval.lower(), mid), True
-                    return interval, False
-
-                interval, bisect_success = try_bisection(center)
-
-                if not bisect_success:
-                    uq = (center + interval.upper()) / 2
-                    interval, bisect_success = try_bisection(uq)
-                if not bisect_success:
-                    lq = (center + interval.lower()) / 2
-                    interval, bisect_success = try_bisection(lq)
-
-                if not bisect_success:
-                    # OK, we've refined about as much as we can.
-                    # (We might be able to trim a little more off the edges,
-                    # but the interval is no more than twice as wide as the
-                    # narrowest possible.)
-                    return interval
-
-    def _complex_refine_interval(self, interval, prec):
-        r"""
-        Takes an interval which is assumed to enclose exactly one root
-        of the polynomial (or, with multiplicity=`k`, exactly one root
-        of the `k-1`-st derivative); and a precision, in bits.
-
-        Tries to find a narrow interval enclosing the root using
-        interval arithmetic of the given precision. (No particular
-        number of resulting bits of precision is guaranteed.)
-
-        Uses Newton's method (adapted for interval arithmetic). The
-        algorithm will converge very quickly if started with a
-        sufficiently narrow interval. If Newton's method fails, then
-        we falls back on computing all the roots of the polynomial
-        numerically, and select the appropriate root.
-
-        EXAMPLES::
-
-            sage: from sage.rings.qqbar import ANRoot
             sage: x = polygen(QQbar)
             sage: intv = CIF(RIF(0, 1), RIF(0.1, 1))
             sage: rt = ANRoot(x^5 - 1, intv)
-            sage: new_intv = rt.refine_interval(intv, 53); new_intv # indirect doctest
+            sage: new_intv = rt.refine_interval(intv, 53); new_intv
             0.3090169943749474241? + 0.951056516295153573?*I
             sage: rt.refine_interval(new_intv, 70)
             0.30901699437494742411? + 0.95105651629515357212?*I
         """
-        # Don't throw away bits in the original interval; doing so might
-        # invalidate it (include an extra root)
+        if self._complex:
+            XIF = ComplexIntervalField(prec)
+        else:
+            XIF = RealIntervalField(prec)
 
-        field = ComplexIntervalField(max(prec, interval.prec()))
-        interval = field(interval)
-        if interval.is_exact():
-            return interval
-
-        p = self._poly.poly()
-        dp = p.derivative()
+        p = self._poly._poly.change_ring(XIF)
         for i in xrange(0, self._multiplicity - 1):
-            p = dp
-            dp = p.derivative()
+            p = p.derivative()
 
-        zero = field(0)
-
-        poly_ring = field['x']
-
-        # interval_p = poly_ring(p)
-        coeffs = [c.interval_fast(field) for c in p.list()]
-        interval_p = poly_ring(coeffs)
-
-        # This special case is important: this is the only way we could
-        # refine "infinitely deep" (we could get an interval of diameter
-        # about 2^{-2^31}, and then hit floating-point underflow); avoiding
-        # this case here means we do not have to worry about iterating too
-        # many times later
-        if coeffs[0].is_zero() and zero in interval:
-            return zero
-
-        # interval_dp = poly_ring(dp)
-        dcoeffs = [c.interval_fast(field) for c in dp.list()]
-        interval_dp = poly_ring(dcoeffs)
-
-        while True:
-            center = field(interval.center())
-            val = interval_p(center)
-
-            slope = interval_dp(interval)
-
-            diam = interval.diameter()
-
-            if zero in slope:
-                # Give up and fall back on root isolation.
-                return self._complex_isolate_interval(interval, prec)
-
-            if not (zero in slope):
-                new_range = center - val / slope
-                interval = interval.intersection(new_range)
-
-                new_diam = interval.diameter()
-
-                if new_diam == 0:
-                    # Wow; we nailed it exactly. (This may happen
-                    # whenever the root is exactly equal to some
-                    # floating-point number, and cannot happen
-                    # if the root is not equal to a floating-point
-                    # number.)  We just return the perfect answer.
-                    return interval
-
-                if new_diam == diam:
-                    # We're not getting any better. There are two
-                    # possible reasons for this. Either we have
-                    # refined as much as possible given the imprecision
-                    # of our interval polynomial, and we have the best
-                    # answer we're going to get at this precision;
-                    # or we started with a poor approximation to the
-                    # root, resulting in a broad range of possible
-                    # slopes in this interval, and Newton-Raphson refining
-                    # is not going to help.
-
-                    # I do not have a formal proof, but I believe the
-                    # following test differentiates between these two
-                    # behaviors. (If I'm wrong, we might get bad behavior
-                    # like infinite loops, but we still won't actually
-                    # return a wrong answer.)
-
-                    if val.contains_zero():
-                        # OK, center must be a good approximation
-                        # to the root (in the current precision, anyway).
-                        # And the expression "center - val / slope"
-                        # above means that we have a pretty good interval,
-                        # even if slope is a poor estimate.
-                        return interval
-
-                    # The center of the current interval is known
-                    # not to be a root. This should let us divide
-                    # the interval in half, and improve on our previous
-                    # estimates. I can only think of two reasons why
-                    # it might not:
-                    # 1) the "center" of the interval is actually
-                    # on one of the edges of the interval (because the
-                    # interval is only one ulp wide), or
-                    # 2) the slope estimate is so bad that
-                    # "center - val / slope" doesn't give us information.
-
-                    # With complex intervals implemented as
-                    # rectangular regions of the complex plane, it's
-                    # possible that "val / slope" includes zero even
-                    # if both "val" and "slope" are bounded away from
-                    # zero, if the diameter of the (interval) argument
-                    # of val or slope is large enough.
-
-                    # So we test the diameter of the argument of
-                    # slope; if it's small, we decide that we must
-                    # have a good interval, but if it's big, we decide
-                    # that we probably can't make progress with
-                    # Newton-Raphson.
-
-                    # I think the relevant measure of "small" is
-                    # whether the diameter is less than pi/2; in that
-                    # case, no matter the value of "val" (as long as
-                    # "val" is fairly precise), "val / slope" should
-                    # be bounded away from zero. But we compare
-                    # against 1 instead, in the hopes that this might
-                    # be slightly faster.
-
-                    if slope.argument().absolute_diameter() < 1:
-                        return interval
-
-                    # And now it's time to give up.
-                    return self._complex_isolate_interval(interval, prec)
-
-    def _complex_isolate_interval(self, interval, prec):
-        """
-        Find a precise approximation to the unique root in interval,
-        by finding a precise approximation to all roots of the
-        polynomial, and checking which one is in interval. Slow but sure.
-
-        EXAMPLES::
-
-            sage: from sage.rings.qqbar import ANRoot
-            sage: x = polygen(QQbar)
-            sage: intv = CIF(RIF(0, 1), RIF(0.1, 1))
-            sage: rt = ANRoot(x^5 - 1, intv)
-            sage: rt._complex_isolate_interval(intv, 53)
-            0.3090169943749474241? + 0.951056516295153573?*I
-        """
-        rts = self._poly.complex_roots(prec, self._multiplicity)
-
-        # Find all the roots that overlap interval.
-        our_root = [rt for rt in rts if rt.overlaps(interval)]
-
-        if len(our_root) == 1:
-            return our_root[0]
-
-        if len(our_root) == 0:
-            raise ValueError("Complex root interval does not include any roots")
-
-        # We have more than one root that overlap the current interval.
-        # Technically, this might not be an error; perhaps the actual
-        # root is just outside our interval, even though the (presumably
-        # tight) interval containing that root touches our interval.
-
-        # But it seems far more likely that the provided interval is
-        # just too big.
-
-        raise ValueError("Complex root interval probably includes multiple roots")
+        from sage.rings.polynomial.refine_root import refine_root
+        return refine_root(p, p.derivative(), XIF(interval), XIF)
 
     def exactify(self):
         """
@@ -7064,7 +6719,7 @@ class ANRoot(ANDescr):
         self._more_precision()
         return self._interval_fast(prec)
 
-qq_generator = AlgebraicGenerator(QQ, ANRoot(AAPoly.gen() - 1, RIF(1)))
+qq_generator = AlgebraicGenerator(QQ, ANRoot(AAPoly.gen() - 1, RealIntervalField(64).one()))
 
 _cyclotomic_gen_cache = {}
 def cyclotomic_generator(n):
