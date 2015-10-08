@@ -650,3 +650,9 @@ code = setup(name = 'sage',
       cmdclass = { 'build_ext': sage_build_ext },
       ext_modules = ext_modules)
 
+#########################################################
+### Install Jupyter kernel spec
+#########################################################
+
+from sage.repl.ipython_kernel.install import SageKernelSpec
+SageKernelSpec.update()
