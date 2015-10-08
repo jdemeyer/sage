@@ -74,12 +74,18 @@ class NotebookIPython(object):
     """)
 
     def __init__(self, argv):
-        from sage.repl.ipython_kernel.install import have_prerequisites
-        if not have_prerequisites():
+        try:
+            from notebook.notebookapp import NotebookApp
+        except ImportError:
+            import traceback
+            traceback.print_exc()
             print(self.PREREQUISITE_ERROR)
             raise SystemExit(1)
-        from IPython import start_ipython
-        start_ipython(['notebook'] + argv)
+        from notebook.utils import url_path_join
+        app = NotebookApp.instance()
+        app.mathjax_url = url_path_join(app.base_url, "nbextensions", "mathjax", "MathJax.js")
+        app.initialize(argv)
+        app.start()
 
 
 description = \
