@@ -9,76 +9,106 @@
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
+from libc.stdio cimport FILE
+
 cdef extern from "glpk.h":
-     ctypedef struct glp_tree
+    ctypedef struct glp_tree
 
-     ctypedef struct glp_prob
+    ctypedef struct glp_prob
 
-     ctypedef struct glp_iocp:
-         int msg_lev
-         int br_tech
-         int bt_tech
-         int pp_tech
-         int fp_heur
-         int gmi_cuts
-         int mir_cuts
-         int cov_cuts
-         int clq_cuts
-         double tol_int
-         double tol_obj
-         double mip_gap
-         int tm_lim
-         int out_frq
-         int out_dly
-         int presolve
-         int binarize
-         void (*cb_func)(glp_tree *T, void *info) # callback function
-         void *cb_info                            # callback function input
+    ctypedef struct glp_iocp:
+        int msg_lev
+        int br_tech
+        int bt_tech
+        int pp_tech
+        int fp_heur
+        int gmi_cuts
+        int mir_cuts
+        int cov_cuts
+        int clq_cuts
+        double tol_int
+        double tol_obj
+        double mip_gap
+        int tm_lim
+        int out_frq
+        int out_dly
+        int presolve
+        int binarize
+        void (*cb_func)(glp_tree *T, void *info) # callback function
+        void *cb_info                            # callback function input
 
-     ctypedef struct glp_smcp:
-         int msg_lev
-         int meth
-         int pricing
-         int r_test
-         double tol_bnd
-         double tol_dj
-         double tol_piv
-         double obj_ll
-         double obj_ul
-         int it_lim
-         int tm_lim
-         int out_frq
-         int out_dly
-         int presolve
+    ctypedef struct glp_smcp:
+        int msg_lev
+        int meth
+        int pricing
+        int r_test
+        double tol_bnd
+        double tol_dj
+        double tol_piv
+        double obj_ll
+        double obj_ul
+        int it_lim
+        int tm_lim
+        int out_frq
+        int out_dly
+        int presolve
 
-     # Graph structure
-     ctypedef struct glp_graph "glp_graph":
-         void *pool
-         char *name
-         int nv_max
-         int nv
-         int na
-         glp_vertex **v
-         void *index
-         int v_size
-         int a_size
+    # Graph structure
+    ctypedef struct glp_graph:
+        void *pool
+        char *name
+        int nv_max
+        int nv
+        int na
+        glp_vertex **v
+        void *index
+        int v_size
+        int a_size
 
-     # Arc structure
-     ctypedef struct glp_arc "glp_arc":
-         glp_vertex *tail
-         glp_vertex *head
-         void *data
-         void *temp
-         glp_arc *t_prev
-         glp_arc *t_next
-         glp_arc *h_prev
-         glp_arc *h_next
+    # Arc structure
+    ctypedef struct glp_arc:
+        glp_vertex *tail
+        glp_vertex *head
+        void *data
+        void *temp
+        glp_arc *t_prev
+        glp_arc *t_next
+        glp_arc *h_prev
+        glp_arc *h_next
 
-     # Vertex structure
-     ctypedef struct glp_vertex "glp_vertex":
-         int i
-         char *name
-         void *entry
-         void *data
-         void *temp
-         glp_arc *out
+    # Vertex structure
+    ctypedef struct glp_vertex:
+        int i
+        char *name
+        void *entry
+        void *data
+        void *temp
+        glp_arc *out
+
+    struct MBD:
+        size_t size
+        MBD *self
+        MBD *prev
+        MBD *next
+
+    struct ENV:
+        char* version
+        ENV *self
+        char *term_buf
+        int term_out
+        int (*term_hook)(void *info, const char *s)
+        void *term_info
+        FILE *tee_file
+        const char *err_file
+        int err_line
+        void (*err_hook)(void *info)
+        void *err_info
+        char *err_buf
+        size_t mem_limit
+        MBD *mem_ptr
+        int mem_count
+        int mem_cpeak
+        size_t mem_total
+        size_t mem_tpeak
+        void *h_odbc
+        void *h_mysql
