@@ -2995,8 +2995,6 @@ class FreeModule_generic_pid(FreeModule_generic):
         """
         Return the quotient of self by the given submodule sub.
 
-        This just calls self.quotient(sub, check).
-
         EXAMPLES::
 
             sage: V1 = ZZ^2; W1 = V1.span([[1,2],[3,4]])
@@ -3833,8 +3831,6 @@ class FreeModule_generic_field(FreeModule_generic_pid):
     def __truediv__(self, sub, check=True):
         """
         Return the quotient of self by the given subspace sub.
-
-        This just calls self.quotient(sub, check)
 
         EXAMPLES::
 

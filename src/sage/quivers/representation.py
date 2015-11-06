@@ -1503,7 +1503,7 @@ class QuiverRep_generic(WithEqualityById, Module):
 
     def __truediv__(self, sub):
         """
-        This and :meth:`__div__` above together overload the ``/`` operator.
+        Overload the ``/`` operator.
 
         TESTS::
 
