@@ -337,7 +337,7 @@ doesn't::
     sage: T = TermOrder("royalorder")
     Traceback (most recent call last):
     ...
-    TypeError: Unknown term order 'royalorder'
+    ValueError: unknown term order 'royalorder'
     sage: T = TermOrder("royalorder",force=True)
     sage: T
     royalorder term order
@@ -604,6 +604,13 @@ class TermOrder(SageObject):
             sage: t4
             Degree negative lexicographic term order
 
+        We allow blocks of length 0, these are simply ignored::
+
+            sage: TermOrder('lex(0),degrevlex(5),deglex(0),deglex(2)')
+            Block term order with blocks:
+            (Degree reverse lexicographic term order of length 5,
+             Degree lexicographic term order of length 2)
+
         .. note::
 
            The optional `n` parameter is not necessary if only
@@ -652,7 +659,7 @@ class TermOrder(SageObject):
                     name = name.list() # name may be a matrix
                 name = tuple(name)
             except Exception:
-                raise TypeError("%s is not a valid term order"%(name,))
+                raise ValueError("{!r} is not a valid term order".format(name))
 
         self._blocks = tuple()
         self._weights = None
@@ -662,16 +669,12 @@ class TermOrder(SageObject):
         if name == "block": # block term order with blocks in a list
             length = 0
             blocks = []
-            name_str = []
             singular_str = []
             macaulay2_str = []
 
             for t in n:
                 if not isinstance(t, TermOrder):
-                    try:
-                        t = TermOrder(t,force=True)
-                    except Exception:
-                        raise TypeError
+                    t = TermOrder(t, force=True)
                 if t.name() == 'block':
                     blocks = blocks + list(t.blocks())
                     singular_str.append("%s"%(t.singular_str()[1:-1],))  # [1:-1] is needed to remove parenthesis
@@ -708,7 +711,7 @@ class TermOrder(SageObject):
                 block_names = re.findall(split_pattern,name)
 
                 if len(block_names) == 0:
-                    raise TypeError("No term order specified")
+                    raise ValueError("no term order specified")
                 elif len(block_names) == 1:
                     name = block_names[0]
                     match = re.match('m\(([-+0-9,]+)\)$',name)
@@ -717,7 +720,7 @@ class TermOrder(SageObject):
                         self.__copy(TermOrder(m))
                     else: # simple order
                         if name not in print_name_mapping.keys() and name not in singular_name_mapping.values():
-                            raise TypeError("Unknown term order '%s'"%(name,))
+                            raise ValueError("unknown term order {!r}".format(name))
                         self._length = n
                         self._name = name
                         self._singular_str = singular_name_mapping.get(name,name)
@@ -726,7 +729,6 @@ class TermOrder(SageObject):
                 else: # len(block_names) > 1, and hence block order represented by a string
                     length = 0
                     blocks = []
-                    name_str = []
                     singular_str = []
                     macaulay2_str = []
 
@@ -735,24 +737,22 @@ class TermOrder(SageObject):
                         try:
                             block_name, block_length, _ = re.split(length_pattern,block.strip())
                             block_length = int(block_length)
-                            assert( block_length > 0)
-
-                            blocks.append( TermOrder(block_name, block_length, force=force) )
-                            name_str.append("%s(%d)"%(block_name, block_length))
-                            singular_str.append("%s(%d)"%(singular_name_mapping.get(block_name, block_name), block_length))
-                            macaulay2_str.append("%s => %d"%(macaulay2_name_mapping.get(block_name, block_name), block_length))
-                            length += block_length
+                            if block_length > 0:  # ignore blocks with length 0
+                                blocks.append( TermOrder(block_name, block_length, force=force) )
+                                singular_str.append("%s(%d)"%(singular_name_mapping.get(block_name, block_name), block_length))
+                                macaulay2_str.append("%s => %d"%(macaulay2_name_mapping.get(block_name, block_name), block_length))
+                                length += block_length
                         except ValueError:
                             block_name = block.strip()
                             if block_name.lower() != "c":
-                                raise TypeError("%s is not a valid term ordering (wrong part: '%s')"%(name, block))
+                                raise ValueError("{!r} is not a valid term order (wrong part: {!r})".format(name, block))
 
                     if n != 0 and length != n:
-                        raise TypeError("Term order length does not match the number of generators")
+                        raise ValueError("term order length does not match the number of generators")
                     self.__copy(TermOrder('block', blocks))
         elif isinstance(name, str) and (isinstance(n, tuple) or isinstance(n,list)): # weighted degree term orders
             if name not in print_name_mapping.keys() and name not in singular_name_mapping.values() and not force:
-                raise TypeError("Unknown term order '%s'"%(name,))
+                raise ValueError("unknown term order {!r}".format(name))
             weights = tuple(int(w) for w in n) # n is a tuple of weights
             if any([w<=0 for w in weights]):
                 raise ValueError("the degree weights must be positive integers")
@@ -768,7 +768,7 @@ class TermOrder(SageObject):
                 from math import sqrt
                 n = int(sqrt(len(name)))
             if n**2 != len(name):
-                raise TypeError("%s does not specify a square matrix"%(name,))
+                raise ValueError("{} does not specify a square matrix".format(name))
 
             int_str = ','.join([str(int(e)) for e in name])
 
@@ -783,7 +783,7 @@ class TermOrder(SageObject):
             self._matrix.set_immutable()
             self._weights = name[:n] # the first row of the matrix gives weights
         else:
-            raise TypeError("%s is not a valid term order"%(name,))
+            raise ValueError("{!r} is not a valid term order".format(name))
 
         if self._length != 0:
             self._singular_str = self._singular_str%dict(ngens=self._length)
@@ -2107,7 +2107,7 @@ def termorder_from_singular(S):
         else:
             order.append(TermOrder(inv_singular_name_mapping[blocktype], ZZ(singular.eval("size(%s[2])"%block.name()))))
     if not order:
-        raise ValueError("Invalid term order in Singular")
+        raise ValueError("invalid term order in Singular")
     out = order.pop(0)
     while order:
         out = out + order.pop(0)
