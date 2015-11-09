@@ -804,7 +804,7 @@ diff -druN glpk-4.55.orig/src/Makefile.am glpk-4.55.new/src/Makefile.am
 @@ -18,7 +18,8 @@
  
  libglpk_la_LDFLAGS = \
- -version-info 37:2:1 \
+ -version-info 38:0:2 \
 --export-symbols-regex '^glp_*'
 +-export-symbols-regex '^glp_*' \
 +$(LIBGLPK_LDFLAGS)
@@ -833,7 +833,7 @@ diff -druN glpk-4.55.orig/src/Makefile.in glpk-4.55.new/src/Makefile.in
 @@ -315,7 +317,8 @@
  
  libglpk_la_LDFLAGS = \
- -version-info 37:2:1 \
+ -version-info 38:0:2 \
 --export-symbols-regex '^glp_*'
 +-export-symbols-regex '^glp_*' \
 +$(LIBGLPK_LDFLAGS)

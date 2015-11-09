@@ -55,6 +55,7 @@ cdef void sage_glpk_error_hook(void *info) with gil:
     """
     A hook to intercept GLPK errors.
     """
+    glp_free_env()
     global error_message
     PyErr_SetObject(GLPKError, error_message.strip())
     error_message = ""
