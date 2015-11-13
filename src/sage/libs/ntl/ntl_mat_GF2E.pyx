@@ -294,7 +294,7 @@ cdef class ntl_mat_GF2E:
         sig_off()
         return r
 
-    def __richcmp__(ntl_mat_GF2E self, other, op):
+    def __richcmp__(ntl_mat_GF2E self, other, int op):
         """
         EXAMPLES::
 
@@ -308,18 +308,16 @@ cdef class ntl_mat_GF2E:
         """
         self.c.restore_c()
 
-        if not isinstance(other, ntl_mat_GF2E):
-            other = ntl_mat_GF2E(other,self.c)
+        if op != Py_EQ and op != Py_NE:
+            raise TypeError("matrices over GF(2^e) are not ordered")
 
-        if op != 2 and op != 3:
-            raise TypeError, "Elements in GF2E are not ordered."
+        cdef ntl_mat_GF2E b
+        try:
+            b = <ntl_mat_GF2E?>other
+        except TypeError:
+            b = ntl_mat_GF2E(other, self.c)
 
-        cdef int t
-        t = mat_GF2E_equal(self.x, (<ntl_mat_GF2E>other).x)
-        if op == 2:
-            return t == 1
-        elif op == 3:
-            return t == 0
+        return (op == Py_EQ) == (self.x == b.x)
 
     def NumRows(self):
         """

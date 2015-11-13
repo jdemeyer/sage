@@ -288,7 +288,7 @@ cdef class ntl_mat_GF2:
         sig_off()
         return r
 
-    def __richcmp__(ntl_mat_GF2 self, other, op):
+    def __richcmp__(ntl_mat_GF2 self, other, int op):
         """
         EXAMPLES::
 
@@ -300,19 +300,19 @@ cdef class ntl_mat_GF2:
             sage: A1[0,0] += 1
             sage: A1 == A2
             False
+            sage: ntl.mat_GF2(1) == 1
+            True
         """
-        if not isinstance(other, ntl_mat_GF2):
-            other = ntl_mat_GF2(other)
+        if op != Py_EQ and op != Py_NE:
+            raise TypeError("matrices over GF(2) are not ordered")
 
-        if op != 2 and op != 3:
-            raise TypeError, "Elements in GF2 are not ordered."
+        cdef ntl_mat_GF2 b
+        try:
+            b = <ntl_mat_GF2?>other
+        except TypeError:
+            b = ntl_mat_GF2(other)
 
-        cdef int t
-        t = mat_GF2_equal(self.x, (<ntl_mat_GF2>other).x)
-        if op == 2:
-            return t == 1
-        elif op == 3:
-            return t == 0
+        return (op == Py_EQ) == (self.x == b.x)
 
     def NumRows(self):
         """
