@@ -41,8 +41,8 @@ cdef inline ntl_mat_ZZ make_mat_ZZ(mat_ZZ_c* x):
     y = ntl_mat_ZZ(_INIT)
     y.x = x[0]
     del x
-    y.__nrows = mat_ZZ_nrows(&y.x);
-    y.__ncols = mat_ZZ_ncols(&y.x);
+    y.__nrows = y.x.NumRows();
+    y.__ncols = y.x.NumCols();
     return y
 
 # You must do sig_on() before calling this function
@@ -89,7 +89,7 @@ cdef class ntl_mat_ZZ(object):
             return
         nrows = int(nrows)
         ncols = int(ncols)
-        mat_ZZ_SetDims(&self.x, nrows, ncols)
+        self.x.SetDims(nrows, ncols)
         self.__nrows = nrows
         self.__ncols = ncols
         if v is not None:

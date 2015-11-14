@@ -539,26 +539,11 @@ static CYTHON_INLINE struct ZZ_pX ZZ_pE_to_ZZ_pX(struct ZZ_pE x)
 
 //////// mat_ZZ //////////
 
-static CYTHON_INLINE void mat_ZZ_SetDims(mat_ZZ* mZZ, long nrows, long ncols){
-    mZZ->SetDims(nrows, ncols);
-}
-
 static CYTHON_INLINE mat_ZZ* mat_ZZ_pow(const mat_ZZ* x, long e)
 {
     mat_ZZ *z = new mat_ZZ();
     NTL::power(*z, *x, e);
     return z;
-}
-
-static CYTHON_INLINE long mat_ZZ_nrows(const mat_ZZ* x)
-{
-    return x->NumRows();
-}
-
-
-static CYTHON_INLINE long mat_ZZ_ncols(const mat_ZZ* x)
-{
-    return x->NumCols();
 }
 
 static CYTHON_INLINE void mat_ZZ_setitem(mat_ZZ* x, int i, int j, const struct ZZ* z)
