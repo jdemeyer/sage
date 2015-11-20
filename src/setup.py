@@ -520,12 +520,10 @@ class sage_build_ext(build_ext):
 #############################################
 
 def run_cythonize():
-    from sage_setup.cython import init_cython
-    init_cython(library_order)
-
     from Cython.Build import cythonize
     import Cython.Compiler.Options
     import Cython.Compiler.Main
+    from sage_setup.cython import distutils_metadata_hook
 
     # Sage uses these directives (mostly for historical reasons).
     Cython.Compiler.Options.embed_pos_in_docstring = True
@@ -575,7 +573,8 @@ def run_cythonize():
         compiler_directives={
             'embedsignature': True,
             'profile': profile,
-        })
+        },
+        distutils_metadata_hook=distutils_metadata_hook(library_order))
 
     for ext in ext_modules:
         print("%s depends on %s"%(ext.name, ext.depends))

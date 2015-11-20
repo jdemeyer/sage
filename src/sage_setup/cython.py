@@ -14,41 +14,80 @@ Sage customizations to Cython
 from .find import find_library_files
 
 
-def wrap_create_extension_list(cython_create_extension_list, library_sort_key):
+class distutils_metadata_hook(object):
     """
-    Decorator for Cython's ``create_extension_list()`` to add
+    A hook function to process extension module metadata with
     Sage-specific customizations:
 
     - sort libraries according to ``library_order``
 
     - add libraries (not just header files) as dependencies
-    """
-    def create_extension_list(*args, **kwds):
-        module_list, module_metadata = cython_create_extension_list(*args, **kwds)
 
-        for ext in module_list:
-            libs = sorted(ext.libraries, key=library_sort_key)
-            # Make a copy because the "depends" for different modules
-            # might be identical Python objects
-            depends = ext.depends[:]
+    INPUT:
+
+    - ``library_order`` -- A :class:`dict` with ``library:order``
+      pairs, where the libraries with the smallest order (which can
+      be negative) are put first. Libraries which do not appear in
+      the dict are assumed to have order 0.
+    """
+    def __init__(self, library_order):
+        """
+        TESTS::
+
+            sage: from sage_setup.cython import distutils_metadata_hook
+            sage: hook = distutils_metadata_hook({})
+            sage: hook.library_order
+            {}
+        """
+        self.library_order = library_order
+        
+    def sort_key(self, lib):
+        """
+        A key to use for sorting libraries.
+
+        EXAMPLES::
+
+            sage: from sage_setup.cython import distutils_metadata_hook
+            sage: order = {'first': -1, 'last': 1}
+            sage: hook = distutils_metadata_hook(order)
+            sage: hook.sort_key("first")
+            -1
+            sage: hook.sort_key("unknown")
+            0
+            sage: sorted(["last", "first", "other"], key=hook.sort_key)
+        """
+        return self.library_order.get(lib, 0)
+
+    def __call__(self, name, meta):
+        """
+        Hook for Cython's ``create_extension_modules()``.
+
+        EXAMPLES::
+
+            sage: from sage_setup.cython import distutils_metadata_hook
+            sage: order = {'first': -1, 'last': 1}
+            sage: hook = distutils_metadata_hook(order)
+            sage: hook("extname", {})
+            {}
+            sage: libs = ["last", "first", "other"]
+            sage: hook("ext", dict(libraries=libs, sources=["ext.c"]))
+        """
+        try:
+            libs = meta['libraries']
+        except KeyError:
+            pass
+        else:
+            libs = sorted(libs, key=self.sort_key)
+
+            try:
+                # Make a copy because the "depends" for different
+                # modules might be identical Python objects
+                depends = meta['depends'][:]
+            except KeyError:
+                depends = []
             for lib in libs:
                 depends += find_library_files(lib)
 
-            ext.libraries = libs
-            ext.depends = depends
-            meta = module_metadata[ext.name]
             meta['libraries'] = libs
             meta['depends'] = depends
-
-        return module_list, module_metadata
-    return create_extension_list
-
-
-def init_cython(library_order):
-    """
-    Monkeypatch ``create_extension_list``
-    """
-    library_sort_key = lambda x: library_order.get(x, 0)
-    import Cython.Build.Dependencies as Deps
-    Deps.create_extension_list = wrap_create_extension_list(
-            Deps.create_extension_list, library_sort_key)
+        return meta
