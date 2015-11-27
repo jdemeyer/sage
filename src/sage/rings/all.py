@@ -186,4 +186,4 @@ from sage.rings.continued_fraction import (farey, convergents,
 from sage.rings.contfrac import (CFF, ContinuedFractionField)
 
 # asymptotic ring
-from asymptotic.all import AsymptoticRing
+from asymptotic.all import *
