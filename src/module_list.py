@@ -572,7 +572,6 @@ ext_modules = [
 
     Extension('sage.libs.lrcalc.lrcalc',
               sources = ["sage/libs/lrcalc/lrcalc.pyx"],
-              include_dirs = [SAGE_INC + '/lrcalc/'],
               libraries = ["lrcalc"]),
 
     Extension('sage.libs.mwrank.mwrank',
