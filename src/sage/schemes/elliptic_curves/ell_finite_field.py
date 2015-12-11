@@ -1275,7 +1275,6 @@ class EllipticCurve_finite_field(EllipticCurve_field, HyperellipticCurve_finite_
             48186763221577974844753957243534456657630
         """
         G = self._pari_().ellgroup(flag=1)
-        k = self.base_ring()
         return tuple(self.point(list(pt)) for pt in G[2])
 
     def __iter__(self):
