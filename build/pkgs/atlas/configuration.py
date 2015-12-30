@@ -161,6 +161,8 @@ conf['SPARC?'] = (platform.processor() == 'sparc')
 
 conf['generic_binary?'] = (os.environ.get('SAGE_FAT_BINARY', 'no') == 'yes')
 
+conf['user'] = os.environ.get('ATLAS_CONFIGURE', '')
+
 ######################################################################
 ### bit width
 ######################################################################
@@ -265,9 +267,5 @@ def unique_glob(g):
 ######################################################################
 
 print("Configuration:")
-for key, value in conf.items():
-    print('    '+str(key)+': '+str(value))
-
-
-
-
+for k in sorted(conf, key=str.lower):
+    print('    {}: {}'.format(k, conf[k]))
