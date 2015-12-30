@@ -10,7 +10,7 @@ cdef class CachedFunction(object):
     cdef public cache  # not always of type <dict>
     cdef _default_key
     cdef bint is_classmethod
-    cdef argfix_init(self)
+    cdef int argfix_init(self) except -1
     cdef key
 
 cdef class CachedMethod(object):

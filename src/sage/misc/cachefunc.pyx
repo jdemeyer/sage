@@ -741,7 +741,7 @@ cdef class CachedFunction(object):
             else:
                 self._fix_to_pos = self._fix_to_pos_and_create_key
 
-    cdef argfix_init(self):
+    cdef int argfix_init(self) except -1:
         """
         TESTS::
 
@@ -956,18 +956,7 @@ cdef class CachedFunction(object):
             True
 
         """
-        # We shortcut a common case of no arguments
-        if args or kwds:
-            if self._argument_fixer is None:
-                self.argfix_init()
-            k = self._fix_to_pos(*args, **kwds)
-        else:
-            if self._default_key is not None:
-                k = self._default_key
-            else:
-                if self._argument_fixer is None:
-                    self.argfix_init()
-                k = self._default_key = self._fix_to_pos()
+        k = self.get_key_args_kwds(args, kwds)
 
         try:
             try:
@@ -1041,9 +1030,7 @@ cdef class CachedFunction(object):
             True
 
         """
-        if self._argument_fixer is None:
-            self.argfix_init()
-        k = self._fix_to_pos(*args, **kwds)
+        k = self.get_key_args_kwds(args, kwds)
         try:
             return k in self.cache
         except TypeError:  # k is not hashable
@@ -1093,14 +1080,31 @@ cdef class CachedFunction(object):
             sage: g(5)         # todo: not implemented
             19
         """
-        if self._argument_fixer is None:
-            self.argfix_init()
-        k = self._fix_to_pos(*args, **kwds)
+        k = self.get_key_args_kwds(args, kwds)
         try:
             self.cache[k] = value
         except TypeError:  # k is not hashable
             k = dict_key(k)
             self.cache[k] = value
+
+    cdef get_key_args_kwds(self, args, kwds):
+        """
+        Return the key in the cache to be used when ``args`` and
+        ``kwds`` are passed in as parameters.
+
+        See ``get_key`` for the Python interface and tests.
+        """
+        # We shortcut a common case of no arguments
+        if not args and not kwds:
+            if self._default_key is None:
+                if self._argument_fixer is None:
+                    self.argfix_init()
+                self._default_key = self._fix_to_pos()
+            return self._default_key
+
+        if self._argument_fixer is None:
+            self.argfix_init()
+        return self._fix_to_pos(*args, **kwds)
 
     def get_key(self, *args, **kwds):
         """
@@ -1119,9 +1123,7 @@ cdef class CachedFunction(object):
             sage: foo.get_key(x=3)
             ((3,), ())
         """
-        if self._argument_fixer is None:
-            self.argfix_init()
-        return self._fix_to_pos(*args, **kwds)
+        return self.get_key_args_kwds(args, kwds)
 
     def __repr__(self):
         """
