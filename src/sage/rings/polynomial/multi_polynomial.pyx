@@ -982,8 +982,7 @@ cdef class MPolynomial(CommutativeRingElement):
             Rational Field
 
         """
-        from sage.rings.arith import gcd
-        from sage.rings.all import ZZ
+        from sage.arith import gcd
         return gcd(self.coefficients())
 
     def is_generator(self):

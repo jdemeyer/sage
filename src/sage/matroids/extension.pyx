@@ -30,7 +30,7 @@ Methods
 #*****************************************************************************
 include 'sage/data_structures/bitset.pxi'
 from basis_matroid cimport BasisMatroid
-from sage.rings.arith import binomial
+from sage.arith import binomial
 
 cdef class CutNode:
     """

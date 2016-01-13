@@ -1544,7 +1544,7 @@ cdef class FreeModuleElement(Vector):   # abstract base class
             if isinstance(ord, AnInfinity):
                return ord
             v.append(ord)
-        from sage.rings.arith import lcm
+        from sage.arith import lcm
         return lcm(v)
 
     def iteritems(self):

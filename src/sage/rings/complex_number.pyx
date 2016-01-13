@@ -2387,8 +2387,8 @@ cdef class ComplexNumber(sage.structure.element.FieldElement):
             sage: z^2 - z + 1
             1.11022302462516e-16
         """
-        import sage.rings.arith
-        return sage.rings.arith.algdep(self,n, **kwds)
+        import sage.arith
+        return sage.arith.algdep(self,n, **kwds)
 
     def algebraic_dependancy( self, n ):
         """

@@ -58,7 +58,7 @@ import sage.groups.generic as generic
 import sage.plot.all as plot
 from sage.plot.plot import generate_plot_points
 
-import sage.rings.arith as arith
+import sage.arith as arith
 import sage.rings.all as rings
 from sage.rings.number_field.number_field_base import is_NumberField
 from sage.misc.all import prod as mul

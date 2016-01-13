@@ -11,7 +11,8 @@ from copy import copy
 from sage.misc.misc import verbose, cputime
 from sage.matrix.constructor import random_matrix, matrix, matrix, identity_matrix
 
-from sage.rings.all import ZZ, Integer, previous_prime, next_prime, CRT_list, RR
+from sage.rings.all import ZZ, Integer, RR
+from sage.arith import previous_prime, next_prime, CRT_list
 
 def max_det_prime(n):
     """

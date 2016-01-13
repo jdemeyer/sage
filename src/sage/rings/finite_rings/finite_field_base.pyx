@@ -639,7 +639,7 @@ cdef class FiniteField(Field):
             sage: K.multiplicative_generator()
             a + 12
         """
-        from sage.rings.arith import primitive_root
+        from sage.arith import primitive_root
 
         if self.__multiplicative_generator is not None:
             return self.__multiplicative_generator

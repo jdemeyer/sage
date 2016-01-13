@@ -55,7 +55,7 @@ import operator
 
 from sage.rings.integer import Integer
 from sage.rings.infinity import infinity
-from sage.rings.arith import *
+from sage.arith import *
 from sage.misc.all import prod
 from sage.rings.complex_field import is_ComplexField
 from sage.groups.abelian_gps.element_base import AbelianGroupElementBase
