@@ -18,10 +18,11 @@ TESTS:
 Check that argspecs of extension function/methods appear correctly,
 see :trac:`12849`::
 
-    sage: docfilename = os.path.join(SAGE_DOC, 'output', 'html', 'en', 'reference', 'calculus', 'sage', 'symbolic', 'expression.html')
+    sage: from sage.env import SAGE_DOC_OUTPUT
+    sage: docfilename = os.path.join(SAGE_DOC_OUTPUT, 'html', 'en', 'reference', 'calculus', 'sage', 'symbolic', 'expression.html')
     sage: for line in open(docfilename):
-    ...       if "#sage.symbolic.expression.Expression.N" in line:
-    ...           print line
+    ....:     if "#sage.symbolic.expression.Expression.N" in line:
+    ....:         print line
     <tt class="descname">N</tt><big>(</big><em>prec=None</em>, <em>digits=None</em>, <em>algorithm=None</em><big>)</big>...
 """
 #*****************************************************************************
@@ -39,7 +40,7 @@ import pydoc
 from sage.misc.viewer import browser
 from sage.misc.temporary_file import tmp_dir
 import sage.version
-from sage.env import SAGE_DOC, SAGE_SRC
+from sage.env import SAGE_DOC, SAGE_DOC_OUTPUT, SAGE_SRC
 
 # The detex function does two kinds of substitutions: math, which
 # should only be done on the command line -- in the notebook, these
@@ -800,13 +801,13 @@ def _search_src_or_doc(what, string, extra1='', extra2='', extra3='',
         module = ''
         exts = ['html']
         title = 'Documentation'
-        base_path = os.path.join(SAGE_DOC, 'output')
+        base_path = SAGE_DOC_OUTPUT
         doc_path = SAGE_DOC
 
-        # We need to import stuff from SAGE_DOC/common
+        # We need to import stuff from SAGE_DOC/builder
         # To do this, we temporarily change sys.path
         oldpath = sys.path
-        sys.path = oldpath + [os.path.join(SAGE_DOC, 'common')]
+        sys.path = oldpath + [os.path.join(SAGE_DOC, 'builder')]
         import build_options as builder
         # List of languages
         lang = builder.LANGUAGES
@@ -1107,7 +1108,7 @@ def search_doc(string, extra1='', extra2='', extra3='', extra4='',
     search is case-insensitive by default.
 
     The file paths in the output are relative to
-    ``$SAGE_DOC/output``.
+    ``$SAGE_DOC_OUTPUT``.
 
     INPUT: same as for :func:`search_src`.
 
@@ -1314,7 +1315,7 @@ class _sage_doc:
             'http://localhost:8000/doc/live/'
         """
         self._base_url = "http://localhost:8000/doc/live/"
-        self._base_path = os.path.join(SAGE_DOC, "output/html/en/")
+        self._base_path = os.path.join(SAGE_DOC_OUTPUT, "html", "en")
 
     def __call__(self, obj, output='html', view=True):
         r"""
@@ -1381,7 +1382,7 @@ class _sage_doc:
                 path = os.path.join(tmp_dir(), "temp.html")
                 filed = open(path, 'w')
 
-                static_path = os.path.join(SAGE_DOC, 'output/html/en/_static')
+                static_path = os.path.join(SAGE_DOC_OUTPUT, "html", "en", "_static")
                 if os.path.exists(static_path):
                     title = obj_name + ' - Sage ' + sage.version.version + ' Documentation'
                     template = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
