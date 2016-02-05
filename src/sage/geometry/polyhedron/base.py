@@ -4684,7 +4684,7 @@ class Polyhedron_base(Element):
             gens.append(l.vector())
 
         # Pick subset of coordinates to coordinatize the affine span
-        pivots = matrix(gens, base_ring=self.base_ring()).pivots()
+        pivots = matrix(gens).pivots()
         def pivot(indexed):
             return [indexed[i] for i in pivots]
 
