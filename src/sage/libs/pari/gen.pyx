@@ -39,7 +39,7 @@ AUTHORS:
 #       Copyright (C) ???? Justin Walker
 #       Copyright (C) ???? Gonzalo Tornaria
 #       Copyright (C) 2010 Robert Bradshaw <robertwb@math.washington.edu>
-#       Copyright (C) 2010-2015 Jeroen Demeyer <jdemeyer@cage.ugent.be>
+#       Copyright (C) 2010-2016 Jeroen Demeyer <jdemeyer@cage.ugent.be>
 #
 #  Distributed under the terms of the GNU General Public License (GPL)
 #  as published by the Free Software Foundation; either version 2 of
@@ -48,34 +48,30 @@ AUTHORS:
 #*****************************************************************************
 
 
-import math
 import types
-import operator
-import sage.structure.element
+cimport cython
+
 from cpython.string cimport PyString_AsString
-from cpython.int cimport PyInt_AS_LONG
+from cpython.int cimport PyInt_Check
+from cpython.long cimport PyLong_Check
 from cpython.float cimport PyFloat_AS_DOUBLE
 from cpython.complex cimport PyComplex_RealAsDouble, PyComplex_ImagAsDouble
+
+include "cysignals/memory.pxi"
+include "cysignals/signals.pxi"
+
+from .paridecl cimport *
+from .paripriv cimport *
+from .convert cimport integer_to_gen, gen_to_integer
+from .pari_instance cimport (PariInstance, pari_instance,
+        prec_bits_to_words, prec_words_to_bits, default_bitprec)
+from .pari_instance cimport pari_instance as P  # Shorthand
+
 from sage.structure.element cimport ModuleElement, RingElement, Element
 from sage.misc.randstate cimport randstate, current_randstate
 from sage.structure.sage_object cimport rich_to_bool
 from sage.misc.superseded import deprecation, deprecated_function_alias
-
-from .paridecl cimport *
-from .paripriv cimport *
-include "cysignals/memory.pxi"
-include "cysignals/signals.pxi"
-
-cimport cython
-
-from sage.libs.gmp.mpz cimport *
-from sage.libs.gmp.pylong cimport mpz_set_pylong
 from sage.libs.pari.closure cimport objtoclosure
-
-from pari_instance cimport (PariInstance, pari_instance,
-        prec_bits_to_words, prec_words_to_bits, default_bitprec)
-cdef PariInstance P = pari_instance
-
 from sage.rings.integer cimport Integer
 from sage.rings.rational cimport Rational
 
@@ -1347,7 +1343,7 @@ cdef class gen(gen_auto):
             sage: int(pari(RealField(63)(2^63+2)))
             9223372036854775810L
         """
-        return int(Integer(self))
+        return gen_to_integer(self)
 
     def python_list_small(gen self):
         """
@@ -1572,7 +1568,11 @@ cdef class gen(gen_auto):
             sage: long(pari("Mod(2, 7)"))
             2L
         """
-        return long(Integer(self))
+        x = gen_to_integer(self)
+        if isinstance(x, long):
+            return x
+        else:
+            return long(x)
 
     def __float__(gen self):
         """
@@ -9788,7 +9788,6 @@ cpdef gen objtogen(s):
     """
     cdef GEN g
     cdef Py_ssize_t length, i
-    cdef mpz_t mpz_int
     cdef gen v
 
     if isinstance(s, gen):
@@ -9807,18 +9806,12 @@ cpdef gen objtogen(s):
             P.clear_stack()
             return None
         return P.new_gen(g)
-    if isinstance(s, int):
-        sig_on()
-        return P.new_gen(stoi(PyInt_AS_LONG(s)))
+    # This generates slightly more efficient code than
+    # isinstance(s, (int, long))
+    if PyInt_Check(s) | PyLong_Check(s):
+        return integer_to_gen(s)
     if isinstance(s, bool):
         return P.PARI_ONE if s else P.PARI_ZERO
-    if isinstance(s, long):
-        sig_on()
-        mpz_init(mpz_int)
-        mpz_set_pylong(mpz_int, s)
-        g = P._new_GEN_from_mpz_t(mpz_int)
-        mpz_clear(mpz_int)
-        return P.new_gen(g)
     if isinstance(s, float):
         sig_on()
         return P.new_gen(dbltor(PyFloat_AS_DOUBLE(s)))
