@@ -31,10 +31,12 @@ AUTHORS:
 """
 
 #*****************************************************************************
-#       Copyright (C) 2006 David Joyner and William Stein <wstein@gmail.com>
+#       Copyright (C) 2013 Volker Braun <vbraun.name@gmail.com>
 #
-#  Distributed under the terms of the GNU General Public License (GPL)
-#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
 #                  http://www.gnu.org/licenses/
 #*****************************************************************************
 
@@ -95,10 +97,14 @@ class AffineGroupElement(MatrixGroupElement_base):
             sage: g = G.random_element()
             sage: TestSuite(g).run()
         """
+        try:
+            A = A.matrix()
+        except AttributeError:
+            pass
         if is_Matrix(A) and A.nrows() == A.ncols() == parent.degree()+1:
             g = A
-            A = g.submatrix(0,0,2,2)
             d = parent.degree()
+            A = g.submatrix(0, 0, d, d)
             b = [ g[i,d] for i in range(d) ]
             convert = True
         if convert:
