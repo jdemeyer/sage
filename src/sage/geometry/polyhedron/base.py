@@ -4740,6 +4740,42 @@ class Polyhedron_base(Element):
 
         return MatrixGroup(matrix_gens)
 
+    def fundamental_domain(self, group=None):
+        """
+        Return a fundamental domain for the action of a group of
+        symmetries on this polytope.
+
+        INPUT:
+
+        - ``group`` -- (optional) if this is given, it must be a finite
+          matrix group representing affine or linear transformations on
+          the ambient space inducing symmetries of the polyhedron. If
+          ``group`` is not given, the
+          :meth:`restricted_automorphism_group` is used.
+          Instead of a group, the list of elements can also be given.
+
+        OUTPUT: a sub-polytope of the given polytope which tiles the
+        given polytope when applying the group.
+        """
+        # Convert group to a list of elements
+        if group is None:
+            group = self.restricted_automorphism_group(kind="matrix")
+        if not isinstance(group, list):
+            group = list(group)
+
+        # Good coordinates for the V-representation objects. We need
+        # to work in the space spanned by the polyhedron generators,
+        # which may be smaller than the ambient space.
+        V = []
+        for v in self.Vrepresentation():
+            v_coords = list(self._affine_coordinates(v))
+            if v.is_vertex():
+                v_coords = v_coords + [1]
+            else:
+                v_coords = v_coords + [0]
+            V.append(vector(v_coords))
+
+
     def is_full_dimensional(self):
         """
         Return whether the polyhedron is full dimensional.
