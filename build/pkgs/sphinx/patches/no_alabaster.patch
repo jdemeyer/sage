@@ -1,0 +1,11 @@
+diff -ru a/setup.py b/setup.py
+--- a/setup.py	2016-03-06 06:25:30.000000000 +0100
++++ b/setup.py	2016-04-06 19:43:26.388105014 +0200
+@@ -47,7 +47,6 @@
+     'docutils>=0.11',
+     'snowballstemmer>=1.1',
+     'babel>=1.3,!=2.0',
+-    'alabaster>=0.7,<0.8',
+     'imagesize',
+ ]
+ extras_require = {

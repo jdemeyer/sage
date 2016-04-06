@@ -11,10 +11,10 @@
    \setlength\topsep{0ex}%
 @@ -181,7 +181,7 @@
  \renewcommand{\endVerbatim}{%
-     \endOriginalVerbatim%
-   \endMakeFramed%
--  \endlist%
-+  \endtrivlist%
-   % close group to restore \parskip
+     \endOriginalVerbatim
+   \endMakeFramed
+-  \endlist
++  \endtrivlist
+   % close group to restore \parskip (and \SphinxFrameTitle)
    \egroup%
  }
