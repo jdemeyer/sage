@@ -588,14 +588,15 @@ class Documenter(object):
         domain = getattr(self, 'domain', 'py')
         directive = getattr(self, 'directivetype', self.objtype)
         name = self.format_name()
+        sourcename = self.get_sourcename()
         self.add_line(u'.. %s:%s:: %s%s' % (domain, directive, name, sig),
-                      '<autodoc>')
+                      sourcename)
         if self.options.noindex:
-            self.add_line(u'   :noindex:', '<autodoc>')
+            self.add_line(u'   :noindex:', sourcename)
         if self.objpath:
             # Be explicit about the module, this is necessary since .. class::
             # etc. don't support a prepended module name
-            self.add_line(u'   :module: %s' % self.modname, '<autodoc>')
+            self.add_line(u'   :module: %s' % self.modname, sourcename)
 
     def get_doc(self, encoding=None, ignore=1):
         """Decode and return lines of the docstring(s) for the object."""
@@ -621,9 +622,7 @@ class Documenter(object):
             for line in docstringlines:
                 yield line
 
-    def add_content(self, more_content, no_docstring=False):
-        """Add content from docstrings, attribute documentation and user."""
-        # set sourcename and add content from attribute documentation
+    def get_sourcename(self):
         if self.analyzer:
             # prevent encoding errors when the file name is non-ASCII
             if not isinstance(self.analyzer.srcname, text_type):
@@ -631,8 +630,14 @@ class Documenter(object):
                                      sys.getfilesystemencoding(), 'replace')
             else:
                 filename = self.analyzer.srcname
-            sourcename = u'%s:docstring of %s' % (filename, self.fullname)
+            return u'%s:docstring of %s' % (filename, self.fullname)
+        return u'docstring of %s' % self.fullname
 
+    def add_content(self, more_content, no_docstring=False):
+        """Add content from docstrings, attribute documentation and user."""
+        # set sourcename and add content from attribute documentation
+        sourcename = self.get_sourcename()
+        if self.analyzer:
             attr_docs = self.analyzer.find_attr_docs()
             if self.objpath:
                 key = ('.'.join(self.objpath[:-1]), self.objpath[-1])
@@ -641,8 +646,6 @@ class Documenter(object):
                     docstrings = [attr_docs[key]]
                     for i, line in enumerate(self.process_doc(docstrings)):
                         self.add_line(line, sourcename, i)
-        else:
-            sourcename = u'docstring of %s' % self.fullname
 
         # add content from docstrings
         if not no_docstring:
@@ -906,10 +909,12 @@ class Documenter(object):
             if not self.check_module():
                 return
 
+        sourcename = self.get_sourcename()
+
         # make sure that the result starts with an empty line.  This is
         # necessary for some situations where another directive preprocesses
         # reST and no starting newline is present
-        self.add_line(u'', '<autodoc>')
+        self.add_line(u'', sourcename)
 
         # format the object's signature, if any
         try:
@@ -921,7 +926,7 @@ class Documenter(object):
 
         # generate the directive header and options, if applicable
         self.add_directive_header(sig)
-        self.add_line(u'', '<autodoc>')
+        self.add_line(u'', sourcename)
 
         # e.g. the module directive doesn't have content
         self.indent += self.content_indent
@@ -971,15 +976,17 @@ class ModuleDocumenter(Documenter):
     def add_directive_header(self, sig):
         Documenter.add_directive_header(self, sig)
 
+        sourcename = self.get_sourcename()
+
         # add some module-specific options
         if self.options.synopsis:
             self.add_line(
-                u'   :synopsis: ' + self.options.synopsis, '<autodoc>')
+                u'   :synopsis: ' + self.options.synopsis, sourcename)
         if self.options.platform:
             self.add_line(
-                u'   :platform: ' + self.options.platform, '<autodoc>')
+                u'   :platform: ' + self.options.platform, sourcename)
         if self.options.deprecated:
-            self.add_line(u'   :deprecated:', '<autodoc>')
+            self.add_line(u'   :deprecated:', sourcename)
 
     def get_object_members(self, want_all):
         if want_all:
@@ -1277,14 +1284,15 @@ class ClassDocumenter(ModuleLevelDocumenter):
 
         # add inheritance info, if wanted
         if not self.doc_as_attr and self.options.show_inheritance:
-            self.add_line(u'', '<autodoc>')
+            sourcename = self.get_sourcename()
+            self.add_line(u'', sourcename)
             if hasattr(self.object, '__bases__') and len(self.object.__bases__):
                 bases = [b.__module__ in ('__builtin__', 'builtins') and
                          u':class:`%s`' % b.__name__ or
                          u':class:`%s.%s`' % (b.__module__, b.__name__)
                          for b in self.object.__bases__]
                 self.add_line(_(u'   Bases: %s') % ', '.join(bases),
-                              '<autodoc>')
+                              sourcename)
 
     def get_doc(self, encoding=None, ignore=1):
         content = self.env.config.autoclass_content
@@ -1377,18 +1385,19 @@ class DataDocumenter(ModuleLevelDocumenter):
 
     def add_directive_header(self, sig):
         ModuleLevelDocumenter.add_directive_header(self, sig)
+        sourcename = self.get_sourcename()
         if not self.options.annotation:
             try:
                 objrepr = object_description(self.object)
             except ValueError:
                 pass
             else:
-                self.add_line(u'   :annotation: = ' + objrepr, '<autodoc>')
+                self.add_line(u'   :annotation: = ' + objrepr, sourcename)
         elif self.options.annotation is SUPPRESS:
             pass
         else:
             self.add_line(u'   :annotation: %s' % self.options.annotation,
-                          '<autodoc>')
+                          sourcename)
 
     def document_members(self, all_members=False):
         pass
@@ -1519,6 +1528,7 @@ class AttributeDocumenter(ClassLevelDocumenter):
 
     def add_directive_header(self, sig):
         ClassLevelDocumenter.add_directive_header(self, sig)
+        sourcename = self.get_sourcename()
         if not self.options.annotation:
             if not self._datadescriptor:
                 try:
@@ -1526,12 +1536,12 @@ class AttributeDocumenter(ClassLevelDocumenter):
                 except ValueError:
                     pass
                 else:
-                    self.add_line(u'   :annotation: = ' + objrepr, '<autodoc>')
+                    self.add_line(u'   :annotation: = ' + objrepr, sourcename)
         elif self.options.annotation is SUPPRESS:
             pass
         else:
             self.add_line(u'   :annotation: %s' % self.options.annotation,
-                          '<autodoc>')
+                          sourcename)
 
     def add_content(self, more_content, no_docstring=False):
         ClassLevelDocumenter.add_content(self, more_content, no_docstring)
