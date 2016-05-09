@@ -11,14 +11,6 @@
 
     :copyright: Copyright 2007-2016 by the Sphinx team, see AUTHORS.
     :license: BSD, see LICENSE for details.
-
-    AUTHORS:
-
-    - ? (before 2011) - Initial version derived from sphinx.ext.autodoc
-    - Johan S. R. Nielsen - Support for _sage_argspec_
-    - Simon King (2011-04) - Use sageinspect. Include public cython attributes
-      only in the documentation if they have a docstring.
-
 """
 
 import re
@@ -94,6 +86,36 @@ class Options(dict):
             return self[name.replace('_', '-')]
         except KeyError:
             return None
+
+
+class _MockModule(object):
+    """Used by autodoc_mock_imports."""
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        return _MockModule()
+
+    @classmethod
+    def __getattr__(cls, name):
+        if name in ('__file__', '__path__'):
+            return '/dev/null'
+        elif name[0] == name[0].upper():
+            # Not very good, we assume Uppercase names are classes...
+            mocktype = type(name, (), {})
+            mocktype.__module__ = __name__
+            return mocktype
+        else:
+            return _MockModule()
+
+
+def mock_import(modname):
+    if '.' in modname:
+        pkg, _n, mods = modname.rpartition('.')
+        mock_import(pkg)
+    mod = _MockModule()
+    sys.modules[modname] = mod
+    return mod
 
 
 ALL = object()
@@ -486,6 +508,9 @@ class Documenter(object):
                 self.modname, '.'.join(self.objpath))
         try:
             dbg('[autodoc] import %s', self.modname)
+            for modname in self.env.config.autodoc_mock_imports:
+                dbg('[autodoc] adding a mock module %s!', self.modname)
+                mock_import(modname)
             __import__(self.modname)
             parent = None
             obj = self.module = sys.modules[self.modname]
@@ -501,15 +526,21 @@ class Documenter(object):
             return True
         # this used to only catch SyntaxError, ImportError and AttributeError,
         # but importing modules with side effects can raise all kinds of errors
-        except Exception:
+        except (Exception, SystemExit) as e:
             if self.objpath:
                 errmsg = 'autodoc: failed to import %s %r from module %r' % \
                          (self.objtype, '.'.join(self.objpath), self.modname)
             else:
                 errmsg = 'autodoc: failed to import %s %r' % \
                          (self.objtype, self.fullname)
-            errmsg += '; the following exception was raised:\n%s' % \
-                      traceback.format_exc()
+            if isinstance(e, SystemExit):
+                errmsg += ('; the module executes module level statement ' +
+                           'and it might call sys.exit().')
+            else:
+                errmsg += '; the following exception was raised:\n%s' % \
+                          traceback.format_exc()
+            if PY2:
+                errmsg = errmsg.decode('utf-8')
             dbg(errmsg)
             self.directive.warn(errmsg)
             self.env.note_reread()
@@ -917,12 +948,7 @@ class Documenter(object):
         self.add_line(u'', sourcename)
 
         # format the object's signature, if any
-        try:
-            sig = self.format_signature()
-        except Exception as err:
-            self.directive.warn('error while formatting signature for '
-                                '%s: %s' % (self.fullname, err))
-            sig = ''
+        sig = self.format_signature()
 
         # generate the directive header and options, if applicable
         self.add_directive_header(sig)
@@ -996,6 +1022,15 @@ class ModuleDocumenter(Documenter):
                 return True, safe_getmembers(self.object)
             else:
                 memberlist = self.object.__all__
+                # Sometimes __all__ is broken...
+                if not isinstance(memberlist, (list, tuple)) or not \
+                   all(isinstance(entry, string_types) for entry in memberlist):
+                    self.directive.warn(
+                        '__all__ should be a list of strings, not %r '
+                        '(in module %s) -- ignoring __all__' %
+                        (memberlist, self.fullname))
+                    # fall back to all members
+                    return True, safe_getmembers(self.object)
         else:
             memberlist = self.options.members or []
         ret = []
@@ -1111,6 +1146,24 @@ class DocstringSignatureMixin(object):
         return Documenter.format_signature(self)
 
 
+class DocstringStripSignatureMixin(DocstringSignatureMixin):
+    """
+    Mixin for AttributeDocumenter to provide the
+    feature of stripping any function signature from the docstring.
+    """
+    def format_signature(self):
+        if self.args is None and self.env.config.autodoc_docstring_signature:
+            # only act if a signature is not explicitly given already, and if
+            # the feature is enabled
+            result = self._find_signature()
+            if result is not None:
+                # Discarding _args is a only difference with
+                # DocstringSignatureMixin.format_signature.
+                # Documenter.format_signature use self.args value to format.
+                _args, self.retann = result
+        return Documenter.format_signature(self)
+
+
 class FunctionDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):
     """
     Specialized Documenter subclass for functions.
@@ -1169,7 +1222,7 @@ class FunctionDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):
         pass
 
 
-class ClassDocumenter(ModuleLevelDocumenter):
+class ClassDocumenter(DocstringSignatureMixin, ModuleLevelDocumenter):
     """
     Specialized Documenter subclass for classes.
     """
@@ -1322,6 +1375,15 @@ class ClassDocumenter(ModuleLevelDocumenter):
                 (initdocstring == object.__init__.__doc__ or  # for pypy
                  initdocstring.strip() == object.__init__.__doc__)):  # for !pypy
                 initdocstring = None
+            if not initdocstring:
+                # try __new__
+                initdocstring = self.get_attr(
+                    self.get_attr(self.object, '__new__', None), '__doc__')
+                # for new-style classes, no __new__ means default __new__
+                if (initdocstring is not None and
+                    (initdocstring == object.__new__.__doc__ or  # for pypy
+                     initdocstring.strip() == object.__new__.__doc__)):  # for !pypy
+                    initdocstring = None
             if initdocstring:
                 if content == 'init':
                     docstrings = [initdocstring]
@@ -1488,7 +1550,7 @@ class MethodDocumenter(DocstringSignatureMixin, ClassLevelDocumenter):
         pass
 
 
-class AttributeDocumenter(ClassLevelDocumenter):
+class AttributeDocumenter(DocstringStripSignatureMixin, ClassLevelDocumenter):
     """
     Specialized Documenter subclass for attributes.
     """
@@ -1721,9 +1783,12 @@ def setup(app):
     app.add_config_value('autodoc_builtin_argspec', None, True)
     app.add_config_value('autodoc_default_flags', [], True)
     app.add_config_value('autodoc_docstring_signature', False, True)
+    app.add_config_value('autodoc_mock_imports', [], True)
     app.add_event('autodoc-process-docstring')
     app.add_event('autodoc-process-signature')
     app.add_event('autodoc-skip-member')
+
+    return {'version': sphinx.__display_version__, 'parallel_read_safe': True}
 
 
 class testcls:
