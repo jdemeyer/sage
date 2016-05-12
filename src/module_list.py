@@ -200,6 +200,12 @@ ext_modules = [
 
     Extension('*', ['sage/calculus/*.pyx']),
 
+    # Compile this as C++ to work around Cython bug
+    # http://trac.cython.org/ticket/879
+    Extension('sage.calculus.riemann',
+               sources = ['sage/calculus/riemann.pyx'],
+               language='c++'),
+
     ################################
     ##
     ## sage.categories
