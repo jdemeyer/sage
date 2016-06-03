@@ -366,18 +366,6 @@ cdef class LocalGenericElement(CommutativeRingElement):
         # TODO: add a bunch more documentation of latexing elements
         return self._repr_(do_latex = True)
 
-    #def __mod__(self, right):
-    #    raise NotImplementedError
-
-    #cpdef _mul_(self, right):
-    #    raise NotImplementedError
-
-    #cdef _neg_(self):
-    #    raise NotImplementedError
-
-    #def __pow__(self, right):
-    #    raise NotImplementedError
-
     cpdef _sub_(self, right):
         r"""
         Returns the difference between ``self`` and ``right``.
